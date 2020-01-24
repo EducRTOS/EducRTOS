@@ -41,12 +41,17 @@ typedef uint64_t descriptor_t;
   create_descriptor(base,limit,1,privilege,1,(0 | (growdown << 1) | writable),accessed,granularity,size)
 
 static const descriptor_t null_descriptor = create_descriptor(0,0,0,0,0,0,0,0,0);
+
+/* Full access to all addresses for the kernel code and data. */
 static const descriptor_t kernel_code_descriptor = create_code_descriptor(0,0xFFFFFFFF,0,0,1,0,1,1);
 static const descriptor_t kernel_data_descriptor = create_data_descriptor(0,0xFFFFFFFF,0,0,1,0,1,1);
 
-#define NULL_SEGMENT_INDEX 0
-#define KERNEL_CODE_SEGMENT_INDEX 1
-#define KERNEL_DATA_SEGMENT_INDEX 2
+
+enum gdt_entries {
+ NULL_SEGMENT_INDEX,           /* 0 */
+ KERNEL_CODE_SEGMENT_INDEX,    /* 1 */
+ KERNEL_DATA_SEGMENT_INDEX,    /* 2 */
+};
 
 static  descriptor_t gdt[] = {
  [NULL_SEGMENT_INDEX] = null_descriptor,
@@ -68,69 +73,6 @@ static inline void lgdt(descriptor_t *gdt, int size)
   asm volatile ("lgdt %0": : "m" (gdtr) : "memory");
 }
 
-static inline void reload_code_segment(int privilege, bool in_ldt, int idx){  
-  asm volatile ("ljmp %0,$1f\n1:\n"
-                :
-                : "i"(SEGMENT_REG(privilege, in_ldt, idx))
-                : "memory");
-}
-
-/* Reloads ds,es,fs,gs,and ss with the same data segment. Usually what we want. */
-static inline void reload_data_segments(int privilege, bool in_ldt, int idx){
-  asm volatile ("movw %0, %%ax   \n\
-                 movw %%ax,  %%ss\n\
-                 movw %%ax,  %%ds\n\
-                 movw %%ax,  %%es\n\
-                 movw %%ax,  %%fs\n\
-                 movw %%ax,  %%gs"
-                :
-                : "i"(SEGMENT_REG(privilege, in_ldt, idx)) 
-                : "memory","eax");
-}
-
-static inline void reload_es(int privilege, bool in_ldt, int idx){
-  asm volatile ("movw %0, %%ax   \n\
-                 movw %%ax,  %%es\n"
-                :
-                : "i"(SEGMENT_REG(privilege, in_ldt, idx)) 
-                : "memory","eax");
-}
-
-
-static inline void reload_fs(int privilege, bool in_ldt, int idx){
-  asm volatile ("movw %0, %%ax   \n\
-                 movw %%ax,  %%fs\n"
-                :
-                : "i"(SEGMENT_REG(privilege, in_ldt, idx)) 
-                : "memory","eax");
-}
-
-static inline void reload_gs(int privilege, bool in_ldt, int idx){
-  asm volatile ("movw %0, %%ax   \n\
-                 movw %%ax,  %%gs\n"
-                :
-                : "i"(SEGMENT_REG(privilege, in_ldt, idx)) 
-                : "memory","eax");
-}
-
-
-
-static inline void reload_ss(int privilege, bool in_ldt, int idx){
-  asm volatile ("movw %0, %%ax   \n\
-                 movw %%ax,  %%ss\n"
-                :
-                : "i"(SEGMENT_REG(privilege, in_ldt, idx)) 
-                : "memory","eax");
-}
-
-
-static inline void reload_ds(int privilege, bool in_ldt, int idx){
-  asm volatile ("movw %0, %%ax   \n\
-                 movw %%ax,  %%ds\n"
-                :
-                : "i"(SEGMENT_REG(privilege, in_ldt, idx)) 
-                : "memory","eax");
-}
 
 
 
@@ -150,38 +92,15 @@ void kernel_main(void)
   /* Initialize terminal interface */
   terminal_initialize();
 
-  terminal_writestring("before lgdt\n");
-  
-  //lgdt(gdt,sizeof(gdt)/sizeof(descriptor_t));
+  terminal_writestring("Kernel start\n");
+
+  /* Up to now we used the segments loaded by grub. Set up a new gdt
+     and make sure that the segments use it. */
   lgdt(gdt,sizeof(gdt));
-
-
-
-  
-  terminal_writestring("before reload code segment\n");
-
+  terminal_writestring("After lgdt\n");
 
   reload_code_segment(0,false,KERNEL_CODE_SEGMENT_INDEX);
   terminal_writestring("after reload_cs\n");
-
-  
-  reload_fs(0,false,KERNEL_DATA_SEGMENT_INDEX);
-  terminal_writestring("after reload_fs\n");
-
-  reload_ds(0,false,KERNEL_DATA_SEGMENT_INDEX);
-  terminal_writestring("after reload_ds\n");
-
-  reload_ss(0,false,KERNEL_DATA_SEGMENT_INDEX);
-  terminal_writestring("after reload_ss\n");
-
-  
-  /* reload_ds(0,false,KERNEL_DATA_SEGMENT_INDEX); */
-  /* terminal_writestring("after reload_ds\n"); */
-
-  
-
-  /* //ext = 1/0; */
-
 
   reload_data_segments(0,false,KERNEL_DATA_SEGMENT_INDEX);
   terminal_writestring("after reload data segments\n");
