@@ -54,13 +54,27 @@ struct tss
 static struct tss tss_array[NUM_CPUS];
 
 
+/* A note on x86 privilege.
+   
+   DPL = privilege in the data segment descriptor.
+   RPL = privilege in the data segment selector. Allows to lower the privilege for some operations.
+   CPL = privilege of th code segment selector, this is the current privilege level.
+   There is a general protection fault if max(CPL,RPL) >= DPL. */
+
 typedef uint64_t descriptor_t;
+
+/* Size of descriptors. */
+#define S16BIT 0
+#define S32BIT 1
+
+/* Granularity of descriptors: byte or 4k. */
+
 
 #define create_descriptor(/* uint32_t */ base,                          \
 /* uint32_t */ limit,                                                   \
 /* bool */ present, /* 1 if used */           \
-/* unsigned int */ privilege, /* 0 = full privileged, 3 = unprivileged  */ \
-/* bool */ normal_segment ,    /* 0 for TSS and LDT, 1 for normal segment */ \
+/* unsigned int */ privilege, /*  0 = full privileged, 3 = unprivileged  */ \
+/* bool */ normal_segment ,   /* 0 for TSS and LDT, 1 for normal segment */ \
 /* enum permissions */ permissions,                                   \
 /* bool */ accessed,                                                  \
 /* bool */ granularity, /* 0 = par byte, 1 = par block de 4k */ \
@@ -68,7 +82,7 @@ typedef uint64_t descriptor_t;
   (( (uint64_t) limit & 0x000F0000) |                                   \
    ((base >> 16) & 0x000000FF) |                                        \
    (base & 0xFF000000) |                                        \
-   ((accessed | (permissions << 1) | (normal_segment << 4) | (privilege << 6) | (present << 7)) << 8) | \
+   ((accessed | (permissions << 1) | (normal_segment << 4) | (privilege << 5) | (present << 7)) << 8) | \
    (((size << 2) | (granularity << 3)) << 20)) << 32 |                  \
   (base << 16) |                                                        \
   (limit & 0x0000FFFF)
@@ -86,8 +100,8 @@ typedef uint64_t descriptor_t;
 static const descriptor_t null_descriptor = create_descriptor(0,0,0,0,0,0,0,0,0);
 
 /* Full access to all addresses for the kernel code and data. */
-static const descriptor_t kernel_code_descriptor = create_code_descriptor(0,0xFFFFFFFF,0,0,1,0,1,1);
-static const descriptor_t kernel_data_descriptor = create_data_descriptor(0,0xFFFFFFFF,0,0,1,0,1,1);
+static const descriptor_t kernel_code_descriptor = create_code_descriptor(0,0xFFFFFFFF,0,0,1,0,1,S32BIT);
+static const descriptor_t kernel_data_descriptor = create_data_descriptor(0,0xFFFFFFFF,0,0,1,0,1,S32BIT);
 //static const descriptor_t tss0_descriptor = create_tss_descriptor((&tss0),sizeof(tss0),0,1,0);
 
 //static const descriptor_t kernel_data_descriptor = create_tss_descriptor(0,0xFFFFFFFF,0,0,1,0,1,1);
@@ -95,10 +109,12 @@ static const descriptor_t kernel_data_descriptor = create_data_descriptor(0,0xFF
 
 
 enum gdt_entries {
- NULL_SEGMENT_INDEX,           /* 0 */
- KERNEL_CODE_SEGMENT_INDEX,    /* 1 */
- KERNEL_DATA_SEGMENT_INDEX,    /* 2 */
- TSS_SEGMENTS_FIRST_INDEX,            /* 3 */
+ NULL_SEGMENT_INDEX,
+ KERNEL_CODE_SEGMENT_INDEX,
+ KERNEL_DATA_SEGMENT_INDEX,
+ USER_CODE_SEGMENT_INDEX, 
+ USER_DATA_SEGMENT_INDEX, 
+ TSS_SEGMENTS_FIRST_INDEX,
  NEXT = TSS_SEGMENTS_FIRST_INDEX + NUM_CPUS,
  SIZE_GDT
 };
@@ -108,6 +124,8 @@ static  descriptor_t gdt[SIZE_GDT] = {
  [NULL_SEGMENT_INDEX] = null_descriptor,
  [KERNEL_CODE_SEGMENT_INDEX] = kernel_code_descriptor,
  [KERNEL_DATA_SEGMENT_INDEX] = kernel_data_descriptor,
+ [USER_CODE_SEGMENT_INDEX] = create_code_descriptor(0,0xFFFFFFFF,3,0,1,0,1,S32BIT),
+ [USER_DATA_SEGMENT_INDEX] = create_data_descriptor(0,0xFFFFFFFF,3,0,1,0,1,S32BIT),
  /* We perform software task switching, but still need one TSS by processor. */
  // [TSS0_SEGMENT_INDEX] = 0       /* cannot be a compile-time constant. */
  
@@ -137,7 +155,14 @@ static void register_tss_in_gdt(int idx, struct tss *tss, size_t size){
 }
 
 
+#define STACK_SIZE 1024
+char new_stack[STACK_SIZE];
 
+
+void test_userspace(void){
+  terminal_writestring("Hello from userspace\n");
+  while(1);
+}
 
 
 /* struct descriptor create_descriptor(uint32_t base, uint32_t limit, uint16_t flags){ */
@@ -147,6 +172,27 @@ static void register_tss_in_gdt(int idx, struct tss *tss, size_t size){
 
 
 /* https://wiki.osdev.org/Getting_to_Ring_3 */
+
+
+static inline void switch_to_userspace(uint32_t stack, uint32_t pc){
+  asm volatile ("movw %0, %%ax   \n\
+                 movw %%ax,  %%es\n\
+                 movw %%ax,  %%fs\n\
+                 movw %%ax,  %%gs\n\
+                 movw %%ax,  %%ds\n\
+                 push %0         /* next ss     */ \n\
+                 push %2         /* next esp    */ \n\
+                 pushf           /* next eflags */ \n\
+                 push %1         /* next cs     */ \n\
+                 push %3         /* next eip    */ \n\
+                 iret\n"             
+                :
+                : "i"(GDT_SEGMENT_REG(3, USER_DATA_SEGMENT_INDEX)),
+                  "i"(GDT_SEGMENT_REG(3, USER_CODE_SEGMENT_INDEX)),
+                  "r"(stack),
+                  "r"(pc)
+                : "memory","eax");
+}
 
 
 
@@ -178,6 +224,19 @@ void kernel_main(void)
     load_tr(0,false,TSS_SEGMENTS_FIRST_INDEX);
   }
 
+  switch_to_userspace(&new_stack[STACK_SIZE - sizeof(uint32_t)],&test_userspace);
+
+  
+
+
+  
+  /* Now I should enter ring 3, and make a syscall. */
+  /* https://wiki.osdev.org/SYSENTER // quite simple, should support segmentation, and also works on AMD */
+  /* Bof, non il faut faire un iret je pense. */
+
+    /* https://manybutfinite.com/post/cpu-rings-privilege-and-protection/ */
+    /* => Explique les privilege levels: CPL, DPL, RPL */
+    
   /* TODO: Fixed number of tasks. We could prove correctness without a configuration. */
   
   //  while(1);
@@ -185,8 +244,11 @@ void kernel_main(void)
   /* terminal_writestring("before reload data segments\n"); */
   
   //reload_data_segments(0,false,KERNEL_DATA_SEGMENT_INDEX);
-  
+
+
  
   /* /\* Newline support is left as an exercise. *\/ */
   /* terminal_writestring("Hello, kernel World!\n Hello again!\n"); */
 }
+
+/* MAYBE: rename kernel.c into context-switch.c; this is the low-level part of the kernel. */

@@ -1,6 +1,12 @@
 #define SEGMENT_REG(privilege,in_ldt,index) \
   ((privilege & 3) | ((in_ldt? 1 : 0) << 2) | (index << 3))
 
+#define GDT_SEGMENT_REG(privilege,index) SEGMENT_REG(privilege,false,index)
+#define LDT_SEGMENT_REG(privilege,index) SEGMENT_REG(privilege,true,index)
+
+/* TODO: Pass the whole segment reg as an argument, and use
+   GDT_SEGMENT_REG in the kernel. */
+
 static inline void load_code_segment(int privilege, bool in_ldt, int idx){  
   asm volatile ("ljmp %0,$1f\n1:\n"
                 :
