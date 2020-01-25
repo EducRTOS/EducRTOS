@@ -102,11 +102,9 @@ static const descriptor_t null_descriptor = create_descriptor(0,0,0,0,0,0,0,0,0)
 /* Full access to all addresses for the kernel code and data. */
 static const descriptor_t kernel_code_descriptor = create_code_descriptor(0,0xFFFFFFFF,0,0,1,0,1,S32BIT);
 static const descriptor_t kernel_data_descriptor = create_data_descriptor(0,0xFFFFFFFF,0,0,1,0,1,S32BIT);
+
+/* Does not work because &tss0 is not a compile-time constant, it is split which cannot be done by the linker. */
 //static const descriptor_t tss0_descriptor = create_tss_descriptor((&tss0),sizeof(tss0),0,1,0);
-
-//static const descriptor_t kernel_data_descriptor = create_tss_descriptor(0,0xFFFFFFFF,0,0,1,0,1,1);
-
-
 
 enum gdt_entries {
  NULL_SEGMENT_INDEX,
@@ -187,8 +185,8 @@ static inline void switch_to_userspace(uint32_t stack, uint32_t pc){
                  push %3         /* next eip    */ \n\
                  iret\n"             
                 :
-                : "i"(GDT_SEGMENT_REG(3, USER_DATA_SEGMENT_INDEX)),
-                  "i"(GDT_SEGMENT_REG(3, USER_CODE_SEGMENT_INDEX)),
+                : "i"(gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX)),
+                  "i"(gdt_segment_selector(3, USER_CODE_SEGMENT_INDEX)),
                   "r"(stack),
                   "r"(pc)
                 : "memory","eax");
@@ -209,10 +207,10 @@ void kernel_main(void)
     lgdt(gdt,sizeof(gdt));
     terminal_writestring("After lgdt\n");
 
-    load_code_segment(0,false,KERNEL_CODE_SEGMENT_INDEX);
+    load_code_segment(gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX));
     terminal_writestring("after load_cs\n");
     
-    load_data_segments(0,false,KERNEL_DATA_SEGMENT_INDEX);
+    load_data_segments(gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX));
     terminal_writestring("after load data segments\n");
   }
 
@@ -221,7 +219,7 @@ void kernel_main(void)
     for(int i = 0; i < NUM_CPUS; i++){
       register_tss_in_gdt(i + TSS_SEGMENTS_FIRST_INDEX, &tss_array[i], sizeof(tss_array[i]));
     }
-    load_tr(0,false,TSS_SEGMENTS_FIRST_INDEX);
+    load_tr(gdt_segment_selector(0,TSS_SEGMENTS_FIRST_INDEX));
   }
 
   switch_to_userspace(&new_stack[STACK_SIZE - sizeof(uint32_t)],&test_userspace);
