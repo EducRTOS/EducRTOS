@@ -16,6 +16,9 @@
 /* #endif */
 
 
+
+/**************** TSS ****************/
+
 /* The TSS; almost everything is unused when using software task switching. */
 struct tss
 {
@@ -53,6 +56,7 @@ struct tss
 #define NUM_CPUS 1
 static struct tss tss_array[NUM_CPUS];
 
+/**************** GDT and segment descriptors. ****************/
 
 /* A note on x86 privilege.
    
@@ -61,7 +65,8 @@ static struct tss tss_array[NUM_CPUS];
    CPL = privilege of th code segment selector, this is the current privilege level.
    There is a general protection fault if max(CPL,RPL) >= DPL. */
 
-typedef uint64_t descriptor_t;
+/* A segment descriptor is an entry in a GDT or LDT. */
+typedef uint64_t segment_descriptor_t;
 
 /* Size of descriptors. */
 #define S16BIT 0
@@ -97,16 +102,16 @@ typedef uint64_t descriptor_t;
   create_descriptor(base,limit,1,privilege,0,(4 | 0 << 1 | busy),1,granularity,0)
 
 
-static const descriptor_t null_descriptor = create_descriptor(0,0,0,0,0,0,0,0,0);
+static const segment_descriptor_t null_descriptor = create_descriptor(0,0,0,0,0,0,0,0,0);
 
 /* Full access to all addresses for the kernel code and data. */
-static const descriptor_t kernel_code_descriptor = create_code_descriptor(0,0xFFFFFFFF,0,0,1,0,1,S32BIT);
-static const descriptor_t kernel_data_descriptor = create_data_descriptor(0,0xFFFFFFFF,0,0,1,0,1,S32BIT);
+static const segment_descriptor_t kernel_code_descriptor = create_code_descriptor(0,0xFFFFFFFF,0,0,1,0,1,S32BIT);
+static const segment_descriptor_t kernel_data_descriptor = create_data_descriptor(0,0xFFFFFFFF,0,0,1,0,1,S32BIT);
 
 /* Does not work because &tss0 is not a compile-time constant, it is split which cannot be done by the linker. */
 //static const descriptor_t tss0_descriptor = create_tss_descriptor((&tss0),sizeof(tss0),0,1,0);
 
-enum gdt_entries {
+enum gdt_indices {
  NULL_SEGMENT_INDEX,
  KERNEL_CODE_SEGMENT_INDEX,
  KERNEL_DATA_SEGMENT_INDEX,
@@ -117,7 +122,7 @@ enum gdt_entries {
  SIZE_GDT
 };
 
-static  descriptor_t gdt[SIZE_GDT] = {
+static segment_descriptor_t gdt[SIZE_GDT] = {
                               
  [NULL_SEGMENT_INDEX] = null_descriptor,
  [KERNEL_CODE_SEGMENT_INDEX] = kernel_code_descriptor,
@@ -130,7 +135,7 @@ static  descriptor_t gdt[SIZE_GDT] = {
 };
 
 /* Address of the gdt, and size in bytes. */
-static inline void lgdt(descriptor_t *gdt, int size)
+static inline void lgdt(segment_descriptor_t *gdt, int size)
 {
   struct gdt_register {
     uint16_t limit; /* Maximum offset to access an entry in the GDT. */
@@ -145,31 +150,107 @@ static inline void lgdt(descriptor_t *gdt, int size)
 /* Because of how we manipulate the address, create_tss_descriptor
    cannot be a compile-time constant in C. */
 static void register_tss_in_gdt(int idx, struct tss *tss, size_t size){
-  descriptor_t tss_descriptor = create_tss_descriptor((uint32_t) tss,
+  segment_descriptor_t tss_descriptor = create_tss_descriptor((uint32_t) tss,
                                                        (size <= 0x67? 0x67 : size),
                                                        3,0,0);
   /* The descriptor should not be busy if we want to load the tss. */
   gdt[idx] = tss_descriptor;
 }
 
-
-#define STACK_SIZE 1024
-char new_stack[STACK_SIZE];
+/**************** Interrupts ****************/
 
 
-void test_userspace(void){
-  terminal_writestring("Hello from userspace\n");
-  while(1);
+/* https://wiki.osdev.org/IDT */
+/* I shoud set up interrupt gates, so that interrupts are disabled on entry. */
+
+/* Gate descriptors are entries in the idt. */
+typedef uint64_t gate_descriptor_t;
+
+/* We don't want to use task gate, these are for hardware context switching. */
+/* The difference between interrupt and task gates is that interrupt
+   gates clear the IF flag (interrupts are masked). */
+
+/* No need to define a gate descriptor for every interrupt; the later
+   ones can be caught by the general protection fault handler. */
+#define NB_GATE_DESCRIPTORS 256
+
+
+static gate_descriptor_t idt[NB_GATE_DESCRIPTORS];
+
+/* Privilege is the needed privilege level for calling this interrupt.
+   So, hardware interrupts (or exceptions?) should have 0, but for
+   softwrare interrupt it should be 3. */
+#define create_interrupt_gate_descriptor(func_ptr,code_segment_selector,privilege,size) \
+((((func_ptr) & 0xFFFFULL) |                                               \
+  ((code_segment_selector) << 16)) |                                    \
+ ((((func_ptr) & 0xFFFF0000) |                                          \
+  ((1 << 15) |                                                          \
+   (privilege << 13) |                                                  \
+   (size << 11) |                                                       \
+   (0b00110ULL << 8ULL))) << 32ULL))
+
+ /* Address of variables cannot be constants.. */
+ /* gate_descriptor_t idt[] = { */
+ /*  //  [0x00] = create_interrupt_gate_descriptor(doit,0,0,S32BIT), */
+ /*    [0x00] = create_interrupt_gate_descriptor((uint32_t) doit,0,0,S32BIT) */
+ /* }; */
+
+extern void interrupt_handler(void);
+
+#define SOFTWARE_INTERRUPT_NUMBER 0x27
+
+void init_interrupts(void){
+  for(int i = 0; i < NB_GATE_DESCRIPTORS; i++){
+    idt[i] = create_interrupt_gate_descriptor((uintptr_t) &interrupt_handler,
+                                              gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX),
+                                              0, S32BIT);
+  }
+  idt[SOFTWARE_INTERRUPT_NUMBER] =
+    create_interrupt_gate_descriptor((uintptr_t) &interrupt_handler,
+                                     gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX),
+                                     3, S32BIT);
+  struct idt_register {
+    uint16_t limit; /* Maximum offset to access an entry in the GDT. */
+    uint32_t base; } __attribute__((packed,aligned(8)));
+  struct idt_register idtr;
+  idtr.limit = sizeof(idt);
+  idtr.base = (uint32_t) idt;
+  asm volatile ("lidt %0": : "m" (idtr) : "memory");    
+
 }
 
-
-/* struct descriptor create_descriptor(uint32_t base, uint32_t limit, uint16_t flags){ */
-
-  
-/* } */
+ 
 
 
-/* https://wiki.osdev.org/Getting_to_Ring_3 */
+
+/* Here is what interrupt does:
+
+   - Compare the CPL with the privilege level of the gate
+     descriptor. A general protection fault is issued if they do not
+     match.
+
+   - load eip from func_ptr in the interrupt gate
+   - load cs from the interrupt gate
+
+   - load esp and ss from tss?
+ */
+
+
+
+
+
+#define STACK_SIZE 1024
+char user_stack[STACK_SIZE];
+char kernel_stack[STACK_SIZE];
+
+void test_userspace(void){
+  for(int i = 0; i < 3; i++){
+    terminal_writestring("Hello from userspace\n");
+    asm volatile ("int %0": : "i"(SOFTWARE_INTERRUPT_NUMBER));
+    terminal_writestring("Ret\n");
+  }
+  while(1);
+}
 
 
 static inline void switch_to_userspace(uint32_t stack, uint32_t pc){
@@ -196,6 +277,7 @@ static inline void switch_to_userspace(uint32_t stack, uint32_t pc){
 
 void kernel_main(void) 
 {
+
   /* Initialize terminal interface */
   terminal_initialize();
 
@@ -218,11 +300,18 @@ void kernel_main(void)
   {
     for(int i = 0; i < NUM_CPUS; i++){
       register_tss_in_gdt(i + TSS_SEGMENTS_FIRST_INDEX, &tss_array[i], sizeof(tss_array[i]));
+
+      tss_array[i].ss0 = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);
+      tss_array[i].esp0 = &kernel_stack[STACK_SIZE - sizeof(uint32_t)];
+      
     }
     load_tr(gdt_segment_selector(0,TSS_SEGMENTS_FIRST_INDEX));
   }
 
-  switch_to_userspace(&new_stack[STACK_SIZE - sizeof(uint32_t)],&test_userspace);
+  /* Set-up the idt. */
+  init_interrupts();
+
+  switch_to_userspace(&user_stack[STACK_SIZE - sizeof(uint32_t)],&test_userspace);
 
   
 
