@@ -10,14 +10,14 @@
 #define CHANGE_BB_FOR_ASM_DEBUG "jmp 1f\n1:\n"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
-//#if defined(__linux__)
-//#error "You are not using a cross-compiler, you will most certainly run into trouble"
-//#endif
+#if defined(__linux__)
+#warning "Not using a cross-compiler"
+#endif
  
-/* This tutorial will only work for the 32-bit ix86 targets. */
-/* #if !defined(__i386__) */
-/* #error "This tutorial needs to be compiled with a ix86-elf compiler" */
-/* #endif */
+/* This OS works only for the 32-bit ix86 targets. */
+#if !defined(__i386__)
+#error "Compile for 32 bit x86"
+#endif
 
 /**************** Boot ****************/
 
@@ -210,7 +210,7 @@ extern void interrupt_handler(void);
 
 struct hw_context hw_ctx0;
 
-static void inline __attribute__((noreturn))
+static inline void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx);
 
 
