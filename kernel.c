@@ -240,8 +240,9 @@ void init_interrupts(void){
 
 
 #define STACK_SIZE 1024
-char user_stack[STACK_SIZE];
-char kernel_stack[STACK_SIZE];
+/* System V ABI mandates that stacks are 16-byte aligned. */
+char user_stack[STACK_SIZE] __attribute__((aligned(16)));
+char kernel_stack[STACK_SIZE] __attribute__((aligned(16)));
 
 void test_userspace(void){
   for(int i = 0; i < 3; i++){
