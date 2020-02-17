@@ -293,12 +293,10 @@ struct hw_context {
 
 struct hw_context hw_ctx0;
 
-
 /* TODO: also load ds when we load a hardware context. */
 static inline __attribute__((noreturn)) void hw_context_load(struct hw_context* ctx){
   asm volatile ("mov %0,%%esp \n\
                  popa        \n\
-                 jmp 1f\n1:\n     \
                  iret" : : "r"(ctx) : "memory");
   while(1);
 }
