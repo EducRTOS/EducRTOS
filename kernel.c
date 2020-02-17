@@ -5,6 +5,10 @@
 #include "terminal.h"
 #include "segment.h"
 
+/* As Qemu can dump the state before each basic block, the following
+   fake jump is useful to debug assembly code.  */
+#define CHANGE_BB_FOR_ASM_DEBUG "jmp 1f\n1:\n"
+
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 //#if defined(__linux__)
 //#error "You are not using a cross-compiler, you will most certainly run into trouble"
