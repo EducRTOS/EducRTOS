@@ -19,6 +19,33 @@
 /* #error "This tutorial needs to be compiled with a ix86-elf compiler" */
 /* #endif */
 
+/**************** Boot ****************/
+
+#define USER_STACK_SIZE 1024
+#define KERNEL_STACK_SIZE 1024
+/* System V ABI mandates that stacks are 16-byte aligned. */
+static char user_stack[USER_STACK_SIZE] __attribute__((aligned(16)));
+static char kernel_stack[KERNEL_STACK_SIZE] __attribute__((aligned(16)));
+
+/* Expand x and stringify it; usually what we want. */
+#define XSTRING(x) STRING(x)
+#define STRING(x) #x
+
+asm("\
+.global _start\n\
+.type _start, @function\n\
+_start:\n\
+        /* Setup the stack */ \n\
+	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
+        call kernel_main\n\
+        /* Infinite loop. */\n\
+	cli\n\
+1:	hlt\n\
+	jmp 1b\n\
+/* setup size of _start symbol. */\n\
+.size _start, . - _start\n\
+");
+
 
 
 /**************** TSS ****************/
@@ -164,15 +191,6 @@ static void register_tss_in_gdt(int idx, struct tss *tss, size_t size){
 
 /**************** Interrupts ****************/
 
-#define USER_STACK_SIZE 1024
-#define KERNEL_STACK_SIZE 1024
-/* System V ABI mandates that stacks are 16-byte aligned. */
-static char user_stack[USER_STACK_SIZE] __attribute__((aligned(16)));
-static char kernel_stack[KERNEL_STACK_SIZE] __attribute__((aligned(16)));
-
-/* Expand x and stringify it; usually what we want. */
-#define XSTRING(x) STRING(x)
-#define STRING(x) #x
 /* mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n \ */
 
 /* Do we need CLD in all interrupt handlers? static analysis will tell! */
