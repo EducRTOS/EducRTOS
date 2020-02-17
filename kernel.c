@@ -325,7 +325,9 @@ void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
 
 void test_userspace(void){
   for(int i = 0; i < 3; i++){
-    terminal_writestring("Hello from userspace\n");
+    terminal_writestring("Hello from userspace ");
+    terminal_putchar('0'+i);
+    terminal_writestring("\n");
     asm volatile ("int %0": : "i"(SOFTWARE_INTERRUPT_NUMBER));
     terminal_writestring("Ret\n");
   }
