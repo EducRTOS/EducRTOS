@@ -170,11 +170,19 @@ static void register_tss_in_gdt(int idx, struct tss *tss, size_t size){
 static char user_stack[USER_STACK_SIZE] __attribute__((aligned(16)));
 static char kernel_stack[KERNEL_STACK_SIZE] __attribute__((aligned(16)));
 
+/* Expand x and stringify it; usually what we want. */
+#define XSTRING(x) STRING(x)
+#define STRING(x) #x
+/* mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n \ */
+
+/* Do we need CLD in all interrupt handlers? static analysis will tell! */
 asm("\
 .global interrupt_handler\n\t\
 interrupt_handler:\n\
 	pusha\n\
 	cld\n\
+        mov %esp, %ecx\n\
+	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
 	call c_interrupt_handler\n\
 	popa\n\
 	iret\n\
@@ -182,8 +190,17 @@ interrupt_handler:\n\
 
 extern void interrupt_handler(void);
 
-void c_interrupt_handler(void){
+struct hw_context hw_ctx0;
+
+static void inline __attribute__((noreturn))
+hw_context_switch(struct hw_context* ctx);
+
+
+void __attribute__((fastcall)) 
+c_interrupt_handler(struct hw_context *cur_ctx) {
+  /* TODO: load DS too.  */
   terminal_writestring("Calling interrupt\n");
+  hw_context_switch(cur_ctx);
 }
 
 /* https://wiki.osdev.org/IDT */
@@ -294,13 +311,17 @@ struct hw_context {
 
 struct hw_context hw_ctx0;
 
-/* TODO: also load ds when we load a hardware context. */
-static inline __attribute__((noreturn)) void hw_context_load(struct hw_context* ctx){
+struct hw_context *cur_ctx;
+static inline __attribute__((noreturn)) void hw_context_switch(struct hw_context* ctx){
+  /* We will save the context in the context structure. */
+  tss_array[current_cpu()].esp0 = (char *)ctx + sizeof(struct hw_context);
+  /* TODO: also load ds when we load a hardware context. */  
+  /* Load the context. */
   asm volatile ("mov %0,%%esp \n\
                  popa        \n\
                  iret" : : "r"(ctx) : "memory");
-  while(1);
 }
+
 
 void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
 #ifdef DEBUG
@@ -372,7 +393,7 @@ void kernel_main(void)
   terminal_writestring("Switching to userpsace\n");
   
   hw_context_init(&hw_ctx0,&user_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)],&test_userspace);
-  hw_context_load(&hw_ctx0);
+  hw_context_switch(&hw_ctx0);
 
   
 
