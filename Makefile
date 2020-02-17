@@ -5,7 +5,7 @@ all:
 	gcc -m32 boot.s -c -o boot.o
 	gcc -m32 interrupt.s -c -o interrupt.o
 	gcc -m32 -c terminal.c -o terminal.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra
-	gcc -m32 -c kernel.c -o kernel.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+	gcc -m32 -c low_level.c -o kernel.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 	gcc -m32 -T linker.ld -o myos.bin -ffreestanding -O2 -nostdlib boot.o interrupt.o kernel.o terminal.o -lgcc
 	if grub-file --is-x86-multiboot myos.bin; then echo multiboot confirmed; else  echo the file is not multiboot; fi
 	qemu-system-i386 $(QEMU_OPTIONS) -kernel myos.bin 2>&1 | tee out | tail -n 500
