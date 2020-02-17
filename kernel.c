@@ -58,6 +58,7 @@ struct tss
 /* TSS for the processors. */
 
 #define NUM_CPUS 1
+#define current_cpu() 0
 static struct tss tss_array[NUM_CPUS];
 
 /**************** GDT and segment descriptors. ****************/
