@@ -159,6 +159,11 @@ static void register_tss_in_gdt(int idx, struct tss *tss, size_t size){
 
 /**************** Interrupts ****************/
 
+#define USER_STACK_SIZE 1024
+#define KERNEL_STACK_SIZE 1024
+/* System V ABI mandates that stacks are 16-byte aligned. */
+static char user_stack[USER_STACK_SIZE] __attribute__((aligned(16)));
+static char kernel_stack[KERNEL_STACK_SIZE] __attribute__((aligned(16)));
 
 /* https://wiki.osdev.org/IDT */
 /* I shoud set up interrupt gates, so that interrupts are disabled on entry. */
@@ -297,10 +302,6 @@ void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
 }
 
 
-#define STACK_SIZE 1024
-/* System V ABI mandates that stacks are 16-byte aligned. */
-char user_stack[STACK_SIZE] __attribute__((aligned(16)));
-char kernel_stack[STACK_SIZE] __attribute__((aligned(16)));
 
 void test_userspace(void){
   for(int i = 0; i < 3; i++){
@@ -338,7 +339,7 @@ void kernel_main(void)
       register_tss_in_gdt(i + TSS_SEGMENTS_FIRST_INDEX, &tss_array[i], sizeof(tss_array[i]));
 
       tss_array[i].ss0 = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);
-      tss_array[i].esp0 = &kernel_stack[STACK_SIZE - sizeof(uint32_t)];
+      tss_array[i].esp0 = &kernel_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)];
       
     }
     load_tr(gdt_segment_selector(0,TSS_SEGMENTS_FIRST_INDEX));
@@ -349,7 +350,7 @@ void kernel_main(void)
 
   terminal_writestring("Switching to userpsace\n");
   
-  hw_context_init(&hw_ctx0,&user_stack[STACK_SIZE - sizeof(uint32_t)],&test_userspace);
+  hw_context_init(&hw_ctx0,&user_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)],&test_userspace);
   hw_context_load(&hw_ctx0);
 
   
