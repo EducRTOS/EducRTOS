@@ -106,3 +106,25 @@ void terminal_writestring(const char* data)
 {
 	terminal_write(data, strlen(data));
 }
+
+void terminal_write_hexa_digit(unsigned int n){
+  if(n < 10){
+    terminal_putchar('0' + n);
+  }
+  else{
+    terminal_putchar('a' - 10 + n);
+  }
+}
+
+void terminal_write_uint8(uint8_t num){
+  terminal_write_hexa_digit(num & 15);
+  terminal_write_hexa_digit(num >> 4);
+
+}
+
+void terminal_write_uint32(uint32_t num){
+  for(int i = 0; i < 32/4; i++){
+    terminal_write_hexa_digit(num & 15);
+    num >>= 4;
+  }
+}
