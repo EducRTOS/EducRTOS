@@ -49,7 +49,7 @@ struct tss
    uint32_t unused_ldt;      
    uint16_t unused_trap;
    uint16_t unused_iomap_base;
-} __packed;
+} __attribute__((packed));
 
 /* TSS for the processors. */
 
@@ -266,7 +266,7 @@ struct interrupt_frame
   uint32_t flags;
   uint32_t esp;
   uint32_t ss;
-};
+} __attribute__((packed));
 
 struct pusha
 {
@@ -278,13 +278,13 @@ struct pusha
   uint32_t edx;
   uint32_t ecx;
   uint32_t eax;
-};
+} __attribute__((packed));
 
 /* The hardware context is restored with popa;iret; */
 struct hw_context {
   struct pusha           regs;
   struct interrupt_frame iframe;
-};
+} __attribute__((packed));
 
 
 struct hw_context hw_ctx0;
