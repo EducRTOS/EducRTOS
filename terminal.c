@@ -123,8 +123,7 @@ void terminal_write_uint8(uint8_t num){
 }
 
 void terminal_write_uint32(uint32_t num){
-  for(int i = 0; i < 32/4; i++){
-    terminal_write_hexa_digit(num & 15);
-    num >>= 4;
+  for(int i = 28; i >=0; i-=4){
+    terminal_write_hexa_digit((num >> i)&15);
   }
 }
