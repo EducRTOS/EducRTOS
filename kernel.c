@@ -165,6 +165,22 @@ static void register_tss_in_gdt(int idx, struct tss *tss, size_t size){
 static char user_stack[USER_STACK_SIZE] __attribute__((aligned(16)));
 static char kernel_stack[KERNEL_STACK_SIZE] __attribute__((aligned(16)));
 
+asm("\
+.global interrupt_handler\n\t\
+interrupt_handler:\n\
+	pusha\n\
+	cld\n\
+	call c_interrupt_handler\n\
+	popa\n\
+	iret\n\
+");
+
+extern void interrupt_handler(void);
+
+void c_interrupt_handler(void){
+  terminal_writestring("Calling interrupt\n");
+}
+
 /* https://wiki.osdev.org/IDT */
 /* I shoud set up interrupt gates, so that interrupts are disabled on entry. */
 
@@ -200,13 +216,13 @@ static gate_descriptor_t idt[NB_GATE_DESCRIPTORS];
  /*    [0x00] = create_interrupt_gate_descriptor((uint32_t) doit,0,0,S32BIT) */
  /* }; */
 
-extern void interrupt_handler(void);
+extern void dummy_interrupt_handler(void);
 
 #define SOFTWARE_INTERRUPT_NUMBER 0x27
 
 void init_interrupts(void){
   for(int i = 0; i < NB_GATE_DESCRIPTORS; i++){
-    idt[i] = create_interrupt_gate_descriptor((uintptr_t) &interrupt_handler,
+    idt[i] = create_interrupt_gate_descriptor((uintptr_t) &dummy_interrupt_handler,
                                               gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX),
                                               0, S32BIT);
   }

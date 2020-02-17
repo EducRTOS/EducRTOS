@@ -1,6 +1,6 @@
-.global interrupt_handler
+.global dummy_interrupt_handler
 
-interrupt_handler:
+dummy_interrupt_handler:
          pusha
         cld
         //jmp interrupt_handler2
