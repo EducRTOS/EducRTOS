@@ -236,7 +236,65 @@ void init_interrupts(void){
  */
 
 
+/****************  ****************/
 
+struct interrupt_frame
+{
+  uint32_t eip;
+  uint32_t cs;
+  uint32_t flags;
+  uint32_t esp;
+  uint32_t ss;
+};
+
+struct pusha
+{
+  uint32_t edi;
+  uint32_t esi;
+  uint32_t ebp;
+  uint32_t esp;                 /* Saved, but not restored by popa. */
+  uint32_t ebx;
+  uint32_t edx;
+  uint32_t ecx;
+  uint32_t eax;
+};
+
+/* The hardware context is restored with popa;iret; */
+struct hw_context {
+  struct pusha           regs;
+  struct interrupt_frame iframe;
+};
+
+
+struct hw_context hw_ctx0;
+
+
+/* TODO: also load ds when we load a hardware context. */
+static inline __attribute__((noreturn)) void hw_context_load(struct hw_context* ctx){
+  asm volatile ("mov %0,%%esp \n\
+                 popa        \n\
+                 jmp 1f\n1:\n     \
+                 iret" : : "r"(ctx) : "memory");
+  while(1);
+}
+
+void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
+#ifdef DEBUG
+  ctx->regs.eax = 0xaaaaaaaa;
+  ctx->regs.ecx = 0xcccccccc;
+  ctx->regs.edx = 0xdddddddd;
+  ctx->regs.ebx = 0xbbbbbbbb;
+  ctx->regs.ebp = 0x99999999;        
+  ctx->regs.esi = 0x88888888;
+  ctx->regs.edi = 0x77777777;
+#endif  
+  ctx->iframe.eip = pc;
+  ctx->iframe.cs = (gdt_segment_selector(3, USER_CODE_SEGMENT_INDEX));
+  /* Set only the reserved status flag, that should be set to 1. */
+  ctx->iframe.flags = 0x2;
+  ctx->iframe.esp = stack;
+  ctx->iframe.ss = (gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX));
+}
 
 
 #define STACK_SIZE 1024
@@ -252,29 +310,6 @@ void test_userspace(void){
   }
   while(1);
 }
-
-
-static inline void switch_to_userspace(uint32_t stack, uint32_t pc){
-  asm volatile ("movw %0, %%ax   \n\
-                 movw %%ax,  %%es\n\
-                 movw %%ax,  %%fs\n\
-                 movw %%ax,  %%gs\n\
-                 movw %%ax,  %%ds\n\
-                 push %0         /* next ss     */ \n\
-                 push %2         /* next esp    */ \n\
-                 pushf           /* next eflags */ \n\
-                 push %1         /* next cs     */ \n\
-                 push %3         /* next eip    */ \n\
-                 iret\n"             
-                :
-                : "i"(gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX)),
-                  "i"(gdt_segment_selector(3, USER_CODE_SEGMENT_INDEX)),
-                  "r"(stack),
-                  "r"(pc)
-                : "memory","eax");
-}
-
-
 
 void kernel_main(void) 
 {
@@ -312,7 +347,10 @@ void kernel_main(void)
   /* Set-up the idt. */
   init_interrupts();
 
-  switch_to_userspace(&user_stack[STACK_SIZE - sizeof(uint32_t)],&test_userspace);
+  terminal_writestring("Switching to userpsace\n");
+  
+  hw_context_init(&hw_ctx0,&user_stack[STACK_SIZE - sizeof(uint32_t)],&test_userspace);
+  hw_context_load(&hw_ctx0);
 
   
 
