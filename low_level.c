@@ -32,6 +32,7 @@ static char kernel_stack[KERNEL_STACK_SIZE] __attribute__((aligned(16)));
 #define XSTRING(x) STRING(x)
 #define STRING(x) #x
 
+/* Startup: just setup the stack and call the C function. */
 asm("\
 .global _start\n\
 .type _start, @function\n\
@@ -39,14 +40,28 @@ _start:\n\
         /* Setup the stack */ \n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
         call low_level_init\n\
-        /* Infinite loop. */\n\
-	cli\n\
-1:	hlt\n\
-	jmp 1b\n\
+        jmp error_infinite_loop\n\
 /* setup size of _start symbol. */\n\
 .size _start, . - _start\n\
 ");
 
+
+
+/* An endless infinite loop, used to catch errors, even in contexts
+   where there is no stack.
+   MAYBE: Tell why we enter this loop in an ecx argument.  */
+void __attribute__((noreturn))
+error_infinite_loop(void);
+
+asm("\
+.global error_infinite_loop\n\
+.type error_infinite_loop, @function\n\
+error_infinite_loop:\n\
+        /* Infinite loop. */\n\
+	cli\n\
+1:	hlt\n\
+	jmp 1b\n\
+");
 
 
 /**************** TSS ****************/
@@ -203,8 +218,7 @@ interrupt_handler:\n\
         mov %esp, %ecx\n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
 	call c_interrupt_handler\n\
-	popa\n\
-	iret\n\
+        jmp error_infinite_loop\n\
 ");
 
 extern void interrupt_handler(void);
