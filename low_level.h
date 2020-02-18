@@ -63,18 +63,4 @@ syscall2(uint32_t arg1, uint32_t arg2){
                 );
 }
 
-
-enum syscalls {
-   SYSCALL_YIELD = 0x11,
-   /* SYSCALL_PUTCHAR = 0x22, */
-   /* SYSCALL_SLEEP = 0x33 */
-};
-
-static inline void
-yield(void){
-  syscall1(SYSCALL_YIELD);
-}
-
-
-
 #endif /* __LOW_LEVEL_H__ */

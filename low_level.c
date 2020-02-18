@@ -350,21 +350,6 @@ void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
   ctx->iframe.ss = (gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX));
 }
 
-
-
-
-
-void test_userspace(void){
-  for(int i = 0; i < 3; i++){
-    terminal_writestring("Hello from userspace ");
-    terminal_write_uint32(i);
-    terminal_writestring("\n");
-    yield();
-    terminal_writestring("Ret\n");
-  }
-  while(1);
-}
-
 void low_level_init(void) 
 {
 
@@ -402,7 +387,8 @@ void low_level_init(void)
   init_interrupts();
 
   terminal_writestring("Switching to userpsace\n");
-  
+
+  extern void test_userspace(void);
   hw_context_init(&hw_ctx0,&user_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)],&test_userspace);
   hw_context_switch(&hw_ctx0);
 
