@@ -231,9 +231,10 @@ hw_context_switch(struct hw_context* ctx);
 
 
 void __attribute__((fastcall)) 
-c_interrupt_handler(struct hw_context *cur_ctx) {
+c_interrupt_handler(struct hw_context *cur_ctx, int num) {
   /* TODO: load DS too.  */
   terminal_writestring("Calling interrupt\n");
+  terminal_write_uint32(num);
   hw_context_switch(cur_ctx);
 }
 
@@ -350,13 +351,32 @@ void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
 }
 
 
+/* First argument to interrupts in the hardware context.
+   We put the syscall number in edx. */
+static inline void
+syscall1(uint32_t arg){
+  asm volatile ("int %0": :
+                "i"(SOFTWARE_INTERRUPT_NUMBER),
+                "d"(arg)
+                );
+}
+
+enum syscalls {
+               SYSCALL_YIELD = 0x11,
+};
+
+static inline void
+yield(void){
+  syscall1(SYSCALL_YIELD);
+}
+
 
 void test_userspace(void){
   for(int i = 0; i < 3; i++){
     terminal_writestring("Hello from userspace ");
     terminal_write_uint32(i);
     terminal_writestring("\n");
-    asm volatile ("int %0": : "i"(SOFTWARE_INTERRUPT_NUMBER));
+    yield();
     terminal_writestring("Ret\n");
   }
   while(1);
