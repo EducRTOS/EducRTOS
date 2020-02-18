@@ -217,7 +217,8 @@ interrupt_handler:\n\
 	cld\n\
         mov %esp, %ecx\n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
-	call c_interrupt_handler\n\
+        /* Note: must use the fastcall discipline */\n\
+	call high_level_syscall\n\
         jmp error_infinite_loop\n\
 ");
 
@@ -225,15 +226,6 @@ extern void interrupt_handler(void);
 
 void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx);
-
-
-void __attribute__((fastcall)) 
-c_interrupt_handler(struct hw_context *cur_ctx, int num) {
-  /* TODO: load DS too.  */
-  terminal_writestring("Calling interrupt\n");
-  terminal_write_uint32(num);
-  hw_context_switch(cur_ctx);
-}
 
 /* https://wiki.osdev.org/IDT */
 /* I shoud set up interrupt gates, so that interrupts are disabled on entry. */

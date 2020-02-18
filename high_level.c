@@ -1,10 +1,17 @@
 #include "high_level.h"
+#include "terminal.h"
 
 void __attribute__((fastcall,noreturn))
 high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number){
   /* This works because hw_context must be the first field of a context. */
   _Static_assert(__builtin_offsetof(struct context,hw_context) == 0);
   struct context *cur_ctx = (struct context *) cur_hw_ctx;
+
+  terminal_writestring("Calling interrupt\n");
+  terminal_write_uint32(syscall_number);
+  hw_context_switch(&cur_ctx->hw_context);
+
+  
 }
 
 /* For now: the application is not separated. */
