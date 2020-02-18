@@ -275,7 +275,7 @@ static gate_descriptor_t idt[NB_GATE_DESCRIPTORS];
 
 extern void dummy_interrupt_handler(void);
 
-#define SOFTWARE_INTERRUPT_NUMBER 0x27
+
 
 void init_interrupts(void){
   for(int i = 0; i < NB_GATE_DESCRIPTORS; i++){
@@ -351,24 +351,7 @@ void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
 }
 
 
-/* First argument to interrupts in the hardware context.
-   We put the syscall number in edx. */
-static inline void
-syscall1(uint32_t arg){
-  asm volatile ("int %0": :
-                "i"(SOFTWARE_INTERRUPT_NUMBER),
-                "d"(arg)
-                );
-}
 
-enum syscalls {
-               SYSCALL_YIELD = 0x11,
-};
-
-static inline void
-yield(void){
-  syscall1(SYSCALL_YIELD);
-}
 
 
 void test_userspace(void){

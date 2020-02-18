@@ -33,4 +33,48 @@ struct hw_context {
   struct interrupt_frame iframe;
 } __attribute__((packed));
 
+
+#define SOFTWARE_INTERRUPT_NUMBER 0x27
+
+/**************** For use by user tasks. ****************/
+
+
+/* We try to pass the arguments in register using the calling
+   convention; except that we do not use ecx, as it will be use in the
+   kernel to pass the hardware context.
+
+   First argument (syscall number) is edx, second is eax, third is
+   ebx, fourth is esi, fifth is edi, sixth is ebp. */
+
+static inline void
+syscall1(uint32_t arg){
+  asm volatile ("int %0": :
+                "i"(SOFTWARE_INTERRUPT_NUMBER),
+                "d"(arg)
+                );
+}
+
+static inline void
+syscall2(uint32_t arg1, uint32_t arg2){
+  asm volatile ("int %0": :
+                "i"(SOFTWARE_INTERRUPT_NUMBER),
+                "d"(arg1),
+                "a"(arg2)
+                );
+}
+
+
+enum syscalls {
+   SYSCALL_YIELD = 0x11,
+   /* SYSCALL_PUTCHAR = 0x22, */
+   /* SYSCALL_SLEEP = 0x33 */
+};
+
+static inline void
+yield(void){
+  syscall1(SYSCALL_YIELD);
+}
+
+
+
 #endif /* __LOW_LEVEL_H__ */
