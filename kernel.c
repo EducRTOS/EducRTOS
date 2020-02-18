@@ -302,7 +302,7 @@ void kernel_main(void)
       register_tss_in_gdt(i + TSS_SEGMENTS_FIRST_INDEX, &tss_array[i], sizeof(tss_array[i]));
 
       tss_array[i].ss0 = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);
-      tss_array[i].esp0 = &kernel_stack[STACK_SIZE - sizeof(uint32_t)];
+      tss_array[i].esp0 = (uint32_t)&kernel_stack[STACK_SIZE - sizeof(uint32_t)];
       
     }
     load_tr(gdt_segment_selector(0,TSS_SEGMENTS_FIRST_INDEX));
@@ -311,7 +311,7 @@ void kernel_main(void)
   /* Set-up the idt. */
   init_interrupts();
 
-  switch_to_userspace(&user_stack[STACK_SIZE - sizeof(uint32_t)],&test_userspace);
+  switch_to_userspace((uint32_t)&user_stack[STACK_SIZE - sizeof(uint32_t)], (uint32_t)&test_userspace);
 
   
 
