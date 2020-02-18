@@ -38,7 +38,7 @@ asm("\
 _start:\n\
         /* Setup the stack */ \n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
-        call kernel_main\n\
+        call low_level_init\n\
         /* Infinite loop. */\n\
 	cli\n\
 1:	hlt\n\
@@ -348,7 +348,7 @@ void test_userspace(void){
   while(1);
 }
 
-void kernel_main(void) 
+void low_level_init(void) 
 {
 
   /* Initialize terminal interface */
