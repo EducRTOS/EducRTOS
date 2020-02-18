@@ -4,6 +4,7 @@
 
 #include "terminal.h"
 #include "segment.h"
+#include "low_level.h"
 
 /* As Qemu can dump the state before each basic block, the following
    fake jump is useful to debug assembly code.  */
@@ -300,32 +301,6 @@ void init_interrupts(void){
 
 /****************  ****************/
 
-struct interrupt_frame
-{
-  uint32_t eip;
-  uint32_t cs;
-  uint32_t flags;
-  uint32_t esp;
-  uint32_t ss;
-} __attribute__((packed));
-
-struct pusha
-{
-  uint32_t edi;
-  uint32_t esi;
-  uint32_t ebp;
-  uint32_t esp;                 /* Saved, but not restored by popa. */
-  uint32_t ebx;
-  uint32_t edx;
-  uint32_t ecx;
-  uint32_t eax;
-} __attribute__((packed));
-
-/* The hardware context is restored with popa;iret; */
-struct hw_context {
-  struct pusha           regs;
-  struct interrupt_frame iframe;
-} __attribute__((packed));
 
 
 struct hw_context hw_ctx0;
