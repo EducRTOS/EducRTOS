@@ -3,6 +3,8 @@
 #ifndef __LOW_LEVEL_H__
 #define __LOW_LEVEL_H__
 
+#include <stdint.h>
+
 /* These types should not be manipulated directly, but the high-level
    context has to know their size. */
 
@@ -32,6 +34,13 @@ struct hw_context {
   struct pusha           regs;
   struct interrupt_frame iframe;
 } __attribute__((packed));
+
+
+void
+hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc);
+
+void __attribute__((noreturn))
+hw_context_switch(struct hw_context* ctx);
 
 
 #define SOFTWARE_INTERRUPT_NUMBER 0x27

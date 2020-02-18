@@ -3,7 +3,7 @@ QEMU_OPTIONS= -d in_asm,int,cpu_reset,pcall,cpu -no-reboot -no-shutdown
 LD_FLAGS= -nostdlib -ffreestanding
 CFLAGS = -ffreestanding -O2 -Wall -Wextra -std=gnu99
 
-FILES = interrupt.s terminal.c low_level.c application.c
+FILES = interrupt.s terminal.c low_level.c high_level.c #application.c
 
 all: $(FILES)
 	gcc -m32 $(LD_FLAGS) -T linker.ld -o myos.bin $(CFLAGS) boot.s $(FILES)

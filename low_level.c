@@ -5,6 +5,7 @@
 #include "terminal.h"
 #include "segment.h"
 #include "low_level.h"
+#include "high_level.h"
 
 /* As Qemu can dump the state before each basic block, the following
    fake jump is useful to debug assembly code.  */
@@ -22,10 +23,9 @@
 
 /**************** Boot ****************/
 
-#define USER_STACK_SIZE 1024
+
 #define KERNEL_STACK_SIZE 1024
 /* System V ABI mandates that stacks are 16-byte aligned. */
-static char user_stack[USER_STACK_SIZE] __attribute__((aligned(16)));
 static char kernel_stack[KERNEL_STACK_SIZE] __attribute__((aligned(16)));
 
 /* Expand x and stringify it; usually what we want. */
@@ -223,10 +223,7 @@ interrupt_handler:\n\
 
 extern void interrupt_handler(void);
 
-
-struct hw_context hw_ctx0;
-
-static inline void __attribute__((noreturn))
+void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx);
 
 
@@ -318,17 +315,21 @@ void init_interrupts(void){
 
 
 
-struct hw_context hw_ctx0;
 
-struct hw_context *cur_ctx;
-static inline __attribute__((noreturn)) void hw_context_switch(struct hw_context* ctx){
+
+//struct hw_context *cur_ctx;
+
+void __attribute__((noreturn))
+hw_context_switch(struct hw_context* ctx){
   /* We will save the context in the context structure. */
-  tss_array[current_cpu()].esp0 = (char *)ctx + sizeof(struct hw_context);
+  tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct hw_context);
   /* TODO: also load ds when we load a hardware context. */  
   /* Load the context. */
-  asm volatile ("mov %0,%%esp \n\
-                 popa        \n\
-                 iret" : : "r"(ctx) : "memory");
+  asm volatile
+    ("mov %0,%%esp \n\
+      popa\n\
+      iret" : : "r"(ctx) : "memory");
+  __builtin_unreachable();
 }
 
 
@@ -377,7 +378,7 @@ void low_level_init(void)
       register_tss_in_gdt(i + TSS_SEGMENTS_FIRST_INDEX, &tss_array[i], sizeof(tss_array[i]));
 
       tss_array[i].ss0 = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);
-      tss_array[i].esp0 = &kernel_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)];
+      tss_array[i].esp0 = (uint32_t) &kernel_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)];
       
     }
     load_tr(gdt_segment_selector(0,TSS_SEGMENTS_FIRST_INDEX));
@@ -388,14 +389,8 @@ void low_level_init(void)
 
   terminal_writestring("Switching to userpsace\n");
 
-  extern void test_userspace(void);
-  hw_context_init(&hw_ctx0,&user_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)],&test_userspace);
-  hw_context_switch(&hw_ctx0);
+  high_level_init();
 
-  
-
-
-  
   /* Now I should enter ring 3, and make a syscall. */
   /* https://wiki.osdev.org/SYSENTER // quite simple, should support segmentation, and also works on AMD */
   /* Bof, non il faut faire un iret je pense. */
