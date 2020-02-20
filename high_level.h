@@ -8,6 +8,8 @@
 
 struct context {
   struct hw_context hw_context;
+  /* Round-robin scheduling. */
+  struct context *next;
 };
 
 _Static_assert(__builtin_offsetof(struct context,hw_context) == 0);

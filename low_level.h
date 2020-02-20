@@ -33,7 +33,7 @@ struct pusha
 struct hw_context {
   struct pusha           regs;
   struct interrupt_frame iframe;
-} __attribute__((packed));
+} __attribute__((packed,aligned(4)));
 
 
 void

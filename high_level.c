@@ -15,31 +15,26 @@ high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number){
 
   terminal_writestring("Calling interrupt\n");
   terminal_write_uint32(syscall_number);
-
-  if(cur_ctx == &ctx0)
-    hw_context_switch(&ctx1.hw_context);
-  else
-    hw_context_switch(&ctx0.hw_context);
-    /* hw_context_switch(&cur_ctx->hw_context); */    
+  hw_context_switch(&cur_ctx->next->hw_context);
 }
 
 
-void context_init(struct context *ctx, uint32_t sp, uint32_t pc){
+void context_init(struct context *ctx, uint32_t sp, uint32_t pc,
+                  struct context *prev){
   hw_context_init(&ctx->hw_context, sp, pc);
+  prev->next = ctx;
 }
 
 void __attribute__((noreturn))
 high_level_init(void){
-  /* context_init(&ctx0, */
-  /*              (uint32_t) &user_stack0[USER_STACK_SIZE - sizeof(uint32_t)], */
-  /*              (uint32_t) &test_userspace0); */
-  /* context_init(&ctx1, */
-  /*              (uint32_t) &user_stack1[USER_STACK_SIZE - sizeof(uint32_t)], */
-  /*              (uint32_t) &test_userspace1);   */
-  for(unsigned int i = 0; i < user_tasks_image.nb_tasks; i++){
-    struct task_description *task = &user_tasks_image.tasks[i];
-    context_init(task->context, task->start_sp, task->start_pc);
-  }
+  unsigned int nb_tasks = 2/* user_tasks_image.nb_tasks */;
 
-  hw_context_switch(&(ctx0.hw_context));
+  /* Initialize the circular list of contexts. */
+  struct context *prev = user_tasks_image.tasks[nb_tasks - 1].context;
+  for(unsigned int i = 0; i < nb_tasks; i++){
+    struct task_description *task = &user_tasks_image.tasks[i];
+    context_init(task->context, task->start_sp, task->start_pc, prev);
+    prev = task->context;
+  }
+  hw_context_switch(&user_tasks_image.tasks[0].context->hw_context);
 }
