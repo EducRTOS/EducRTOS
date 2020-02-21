@@ -1,12 +1,52 @@
-#include "terminal.h"           /* For now. */
 #include "user_tasks.h"
-#include "high_level.h"
 
 #define USER_STACK_SIZE 1024
-static char user_stack0[USER_STACK_SIZE] __attribute__((aligned(16)));
-static char user_stack1[USER_STACK_SIZE] __attribute__((aligned(16)));
+#define XSTRING(x) STRING(x)
+#define STRING(x) #x
 
-struct context ctx0, ctx1;
+/* The tasks setup their stack themselves, in assembly. */
+char user_stack0[USER_STACK_SIZE] __attribute__((aligned(16)));
+char user_stack1[USER_STACK_SIZE] __attribute__((aligned(16)));
+
+
+asm("\
+.global _start0\n\
+.type _start0, @function\n\
+_start0:\n\
+        /* Setup the stack */ \n\
+	mov $(user_stack0 + " XSTRING(USER_STACK_SIZE) "), %esp\n\
+        call test_userspace0\n\
+        jmp user_error_infinite_loop\n\
+/* setup size of _start symbol. */\n\
+.size _start0, . - _start0\n\
+");
+
+asm("\
+.global _start1\n\
+.type _start1, @function\n\
+_start1:\n\
+        /* Setup the stack */ \n\
+	mov $(user_stack1 + " XSTRING(USER_STACK_SIZE) "), %esp\n\
+        call test_userspace1\n\
+        jmp user_error_infinite_loop\n\
+/* setup size of _start symbol. */\n\
+.size _start1, . - _start1\n\
+");
+
+
+asm("\
+.global user_error_infinite_loop\n\
+.type user_error_infinite_loop, @function\n\
+user_error_infinite_loop:\n\
+        /* Infinite loop. */\n\
+	cli\n\
+1:	hlt\n\
+	jmp 1b\n\
+");
+
+
+/* TODO: When in userspace, I will not be able to write directly, so I
+   need to call putchar instead. */
 
 void test_userspace0(void){
   for(int i = 0; i < 3; i++){
@@ -30,20 +70,3 @@ void test_userspace1(void){
   while(1);
 }
 
-static const struct task_description tasks[] = {
-  [0] = {
-     .context = &ctx0,
-     .start_pc = (uint32_t) &test_userspace0,
-     .start_sp = (uint32_t) &user_stack0[USER_STACK_SIZE],
-  },
-  [1] = {
-     .context = &ctx1,
-     .start_pc = (uint32_t) &test_userspace1,
-     .start_sp = (uint32_t) &user_stack1[USER_STACK_SIZE],
-  },
-};
-
-struct user_tasks_image user_tasks_image = {
-  .nb_tasks = 2,
-  .tasks = tasks,
-};

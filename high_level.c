@@ -14,9 +14,9 @@ high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number){
 }
 
 
-void context_init(struct context *ctx, uint32_t sp, uint32_t pc,
+void context_init(struct context *ctx, uint32_t pc,
                   struct context *prev){
-  hw_context_init(&ctx->hw_context, sp, pc);
+  hw_context_init(&ctx->hw_context, 0xabcdef00, pc);
   prev->next = ctx;
 }
 
@@ -28,7 +28,7 @@ high_level_init(void){
   struct context *prev = user_tasks_image.tasks[nb_tasks - 1].context;
   for(unsigned int i = 0; i < nb_tasks; i++){
     struct task_description *task = &user_tasks_image.tasks[i];
-    context_init(task->context, task->start_sp, task->start_pc, prev);
+    context_init(task->context, task->start_pc, prev);
     prev = task->context;
   }
   hw_context_switch(&user_tasks_image.tasks[0].context->hw_context);
