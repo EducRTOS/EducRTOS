@@ -2,11 +2,6 @@
 #include "terminal.h"
 #include "user_tasks.h"
 
-
-/* For now: the application is not separated. */
-#include "application.c"
-
-
 void __attribute__((fastcall,noreturn))
 high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number){
   /* This works because hw_context must be the first field of a context. */
