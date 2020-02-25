@@ -5,7 +5,7 @@
 
 enum syscalls {
    SYSCALL_YIELD = 0x11,
-   /* SYSCALL_PUTCHAR = 0x22, */
+   SYSCALL_PUTCHAR = 0x22,
    /* SYSCALL_SLEEP = 0x33 */
 };
 
@@ -13,6 +13,11 @@ static inline void
 yield(void){
   syscall1(SYSCALL_YIELD);
 }
+
+static inline void putchar(unsigned char x){
+  syscall2(SYSCALL_PUTCHAR, x);
+}
+
 
 struct task_description {
   const struct context *context;
