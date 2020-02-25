@@ -4,14 +4,13 @@ static void itoa(long,char*);
 static void itox(unsigned long,char*);
 static void lltoa(unsigned long long, char*);
 
-void __attribute__ ((format (printf, 2, 3)))
-fprint(void (*putchar)(unsigned char), char * format,...)
+
+
+
+void
+vfprint(void (*putchar)(unsigned char), char * format,va_list ap)
 {
-  va_list ap;
-
   char buf[22];
-
-  va_start(ap, format);  
   for(int i=0;format[i]!=0;i++) {
     if(format[i]!='%') putchar(format[i]);
     else
@@ -50,8 +49,16 @@ fprint(void (*putchar)(unsigned char), char * format,...)
         }
       }
   }
+}
+
+void __attribute__ ((format (printf, 2, 3)))
+fprint(void (*putchar)(unsigned char), char * format,...){
+  va_list ap;
+  va_start(ap, format);  
+  vfprint(putchar, format, ap);
   va_end(ap);
 }
+
 
 static void itoa(long number, char* aout)
 {
@@ -114,7 +121,7 @@ int main(void){
   char tutu[30];
   itoa(30,tutu);
   puts(tutu);
-  fprinterr(putchar,"Hello %d %x\nWorld %g", 32,32);
+  fprint(putchar,"Hello %d %x\nWorld %g", 32,32);
   return 0;
 }
 #endif
