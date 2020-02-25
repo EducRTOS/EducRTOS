@@ -56,6 +56,8 @@ asm("\
 _start:\n\
         /* Setup the stack */ \n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
+        mov %eax, %ecx\n\
+        mov %ebx, %edx\n\
         call low_level_init\n\
         jmp error_infinite_loop\n\
 /* setup size of _start symbol. */\n\
@@ -360,12 +362,50 @@ void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
   ctx->iframe.ss = (gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX));
 }
 
-void low_level_init(void) 
-{
+struct multiboot_information {
+  uint32_t flags;
+  /* If flags[0]. */
+  uint32_t mem_lower;
+  uint32_t mem_upper;
+  /* If flags[1]. */
+  uint32_t boot_device;
+  /* If flags[2]. */
+  uint32_t cmdline;
+  /* If flags[3]. */
+  uint32_t mods_count;
+  uint32_t mods_addr;
+}  __attribute__((packed));
 
+
+#include <stdarg.h>
+#include "lib/fprint.h"
+void __attribute__ ((format (printf, 1, 2)))
+fatal(char * format,...){
+  va_list ap;
+  va_start(ap, format);  
+  vfprint(terminal_putchar, format, ap);
+  va_end(ap);
+  error_infinite_loop();
+}
+
+
+void __attribute__((fastcall))
+low_level_init(uint32_t magic_value, struct multiboot_information *mbi) 
+{
   /* Initialize terminal interface */
   terminal_initialize();
 
+  if(magic_value != 0x2BADB002)
+    fatal("Not loaded by a multiboot loader");
+  
+  terminal_print("multiboot_information flags: %x\n", mbi->flags);
+
+  if(mbi->flags&3 == 0)
+    fatal("Multiboot information flags 3 is not present");
+
+  if(mbi->mods_count != 1)
+    fatal("This kernel must be loaded with exactly one module, here %d\n", mbi->mods_count);
+  
   terminal_writestring("Kernel start\n");
 
   /* Up to now we used the segments loaded by grub. Set up a new gdt

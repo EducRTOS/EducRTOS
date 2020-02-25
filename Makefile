@@ -9,7 +9,7 @@ APPLICATION_FILES = application_desc.c application.c # lib/fprint.c
 all: $(FILES)
 	gcc -m32 $(LD_FLAGS) -T kernel.ld -o myos.bin $(CFLAGS) $(KERNEL_FILES) $(APPLICATION_FILES) -lgcc
 	if grub-file --is-x86-multiboot myos.bin; then echo multiboot confirmed; else  echo the file is not multiboot; fi
-	qemu-system-i386 $(QEMU_OPTIONS) -kernel myos.bin 2>&1 | tee out | tail -n 500
+	qemu-system-i386 $(QEMU_OPTIONS) -kernel myos.bin -initrd heap.c 2>&1 | tee out | tail -n 500
 
 
 
