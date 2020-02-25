@@ -18,6 +18,10 @@ static inline void putchar(unsigned char x){
   syscall2(SYSCALL_PUTCHAR, x);
 }
 
+#include "lib/fprint.h"
+#define printf(...) fprint(putchar, __VA_ARGS__)
+
+
 
 struct task_description {
   const struct context *context;

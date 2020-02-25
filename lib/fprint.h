@@ -1,6 +1,8 @@
 #ifndef  __FPRINT_H__
 #define  __FPRINT_H__
 
+#include <stdarg.h>
+
 /* A helper function to print strings, with no buffering, one
    character at a time. */
 

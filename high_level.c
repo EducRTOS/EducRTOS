@@ -7,8 +7,21 @@ high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number, int arg1){
   /* This works because hw_context must be the first field of a context. */
   _Static_assert(__builtin_offsetof(struct context,hw_context) == 0);
   struct context *cur_ctx = (struct context *) cur_hw_ctx;
-  terminal_print("Calling interrupt %x\n", syscall_number);
-  hw_context_switch(&cur_ctx->next->hw_context);
+
+  /* terminal_print("Calling interrupt %x\n", syscall_number); */
+  /* terminal_print("Calling interrupt %x\n", arg1); */
+  /* terminal_print("Calling interrupt %x\n", cur_hw_ctx); */
+  switch(syscall_number){
+  case SYSCALL_YIELD:
+    hw_context_switch(&cur_ctx->next->hw_context);
+    break;
+  case SYSCALL_PUTCHAR:
+    terminal_putchar(arg1);
+    /* terminal_print("After putchar (arg1 %x)\n", arg1); */
+    /* while(1);     */
+    break;
+  }
+  hw_context_switch(&cur_ctx->hw_context);
 }
 
 

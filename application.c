@@ -44,28 +44,18 @@ user_error_infinite_loop:\n\
 	jmp 1b\n\
 ");
 
-
-/* TODO: When in userspace, I will not be able to write directly, so I
-   need to call putchar instead. */
-
 void test_userspace0(void){
   for(int i = 0; i < 3; i++){
-    terminal_writestring("Hello from userspace0 ");
-    terminal_write_uint32(i);
-    terminal_writestring("\n");
+    printf("Userspace0: i=%d\n", i);
     yield();
-    terminal_writestring("Ret\n");
   }
   while(1);
 }
 
 void test_userspace1(void){
-  for(int i = 0x10; i < 0x13; i++){
-    terminal_writestring("Hello from userspace1 ");
-    terminal_write_uint32(i);
-    terminal_writestring("\n");
+  for(int i = 10; i < 13; i++){
+    printf("Userspace1: i=%d\n", i);
     yield();
-    terminal_writestring("Ret\n");
   }
   while(1);
 }
