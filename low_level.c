@@ -23,6 +23,23 @@
 
 /**************** Boot ****************/
 
+#define MULTIBOOT_MAGIC 0x1BADB002
+#define MULTIBOOT_FLAGS (1 << 0) | (1 << 1)
+#define MULTIBOOT_CHECKSUM -(MULTIBOOT_FLAGS + MULTIBOOT_MAGIC)
+
+struct multiboot {
+  uint32_t magic;
+  uint32_t flags;
+  uint32_t checksum;
+} __attribute__((packed,align(4)));
+
+const struct multiboot multiboot __attribute__((section(".multiboot"))) = {
+   .magic = MULTIBOOT_MAGIC,
+   .flags = MULTIBOOT_FLAGS,
+   .checksum = MULTIBOOT_CHECKSUM,
+};
+
+
 
 #define KERNEL_STACK_SIZE 1024
 /* System V ABI mandates that stacks are 16-byte aligned. */

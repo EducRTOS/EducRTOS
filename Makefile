@@ -3,10 +3,11 @@ QEMU_OPTIONS= -d in_asm,int,cpu_reset,pcall,cpu -no-reboot -no-shutdown
 LD_FLAGS= -nostdlib -ffreestanding
 CFLAGS = -ffreestanding -O2 -Wall -Wextra -std=gnu99
 
-FILES = interrupt.s terminal.c low_level.c high_level.c application_desc.c application.c lib/fprint.c
+KERNEL_FILES = interrupt.s terminal.c low_level.c high_level.c  lib/fprint.c
 
+APPLICATION_FILES = application_desc.c application.c # lib/fprint.c
 all: $(FILES)
-	gcc -m32 $(LD_FLAGS) -T kernel.ld -o myos.bin $(CFLAGS) boot.s $(FILES) -lgcc
+	gcc -m32 $(LD_FLAGS) -T kernel.ld -o myos.bin $(CFLAGS) $(KERNEL_FILES) $(APPLICATION_FILES) -lgcc
 	if grub-file --is-x86-multiboot myos.bin; then echo multiboot confirmed; else  echo the file is not multiboot; fi
 	qemu-system-i386 $(QEMU_OPTIONS) -kernel myos.bin 2>&1 | tee out | tail -n 500
 
