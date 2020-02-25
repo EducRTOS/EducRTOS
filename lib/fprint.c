@@ -5,7 +5,7 @@ static void itox(unsigned long,char*);
 static void lltoa(unsigned long long, char*);
 
 void __attribute__ ((format (printf, 2, 3)))
-fprint(int (*putchar)(int), char * format,...)
+fprint(void (*putchar)(unsigned char), char * format,...)
 {
   va_list ap;
 
