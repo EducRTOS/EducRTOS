@@ -215,7 +215,7 @@ asm("\
 interrupt_handler:\n\
 	pusha\n\
 	cld\n\
-        mov %esp, %ecx\n\
+        mov %esp, %eax\n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
         /* Note: must use the fastcall discipline */\n\
 	call high_level_syscall\n\

@@ -2,8 +2,8 @@
 #include "terminal.h"
 #include "user_tasks.h"
 
-void __attribute__((fastcall,noreturn))
-high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number){
+void __attribute__((regparm(3),noreturn))
+high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number, int arg1){
   /* This works because hw_context must be the first field of a context. */
   _Static_assert(__builtin_offsetof(struct context,hw_context) == 0);
   struct context *cur_ctx = (struct context *) cur_hw_ctx;

@@ -48,11 +48,11 @@ hw_context_switch(struct hw_context* ctx);
 /**************** For use by user tasks. ****************/
 
 
-/* We try to pass the arguments in register using the calling
-   convention; except that we do not use ecx, as it will be use in the
-   kernel to pass the hardware context.
+/* We try to pass the arguments in register using the regparm(3) GCC
+   calling convention; except that we do not use the first argument
+   eax, as it will be use in the kernel to pass the hardware context.
 
-   First argument (syscall number) is edx, second is eax, third is
+   First argument (syscall number) is edx, second is ecx, third is
    ebx, fourth is esi, fifth is edi, sixth is ebp. */
 
 static inline void
@@ -68,7 +68,7 @@ syscall2(uint32_t arg1, uint32_t arg2){
   asm volatile ("int %0": :
                 "i"(SOFTWARE_INTERRUPT_NUMBER),
                 "d"(arg1),
-                "a"(arg2)
+                "c"(arg2)
                 );
 }
 
