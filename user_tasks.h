@@ -21,12 +21,9 @@ static inline void putchar(unsigned char x){
 #include "lib/fprint.h"
 #define printf(...) fprint(putchar, __VA_ARGS__)
 
-
-
 struct task_description {
   const struct context *context;
   const uint32_t start_pc;
-  /* const uint32_t start_sp; */
 };
 
 
