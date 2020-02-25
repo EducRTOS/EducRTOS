@@ -72,7 +72,7 @@ void terminal_newline(void){
     terminal_row = 0;
 }
 
-void terminal_putchar(char c) 
+void terminal_putchar(unsigned char c) 
 {
   switch(c){
    case '\n':
@@ -118,4 +118,13 @@ void terminal_write_uint32(uint32_t num){
   for(int i = 28; i >=0; i-=4){
     terminal_write_hexa_digit((num >> i)&15);
   }
+}
+
+#include <stdarg.h>
+#include "lib/fprint.h"
+void terminal_print(char *format, ...){
+  va_list args;
+  va_start(args,format);
+  vfprint(terminal_putchar, format, args);
+  va_end(args);
 }
