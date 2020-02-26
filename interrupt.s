@@ -1,9 +1,9 @@
 .global dummy_interrupt_handler
 
 dummy_interrupt_handler:
-         pusha
+        pusha
         cld
-        //jmp interrupt_handler2
+        jmp interrupt_handler2
         popa
         iret
         nop
