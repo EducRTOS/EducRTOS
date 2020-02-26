@@ -29,19 +29,23 @@ struct pusha
   uint32_t eax;
 } __attribute__((packed));
 
-/* The hardware context is restored with popa;iret; */
 
 /* A segment descriptor is an entry in a GDT or LDT. */
 typedef uint64_t segment_descriptor_t;
 
 struct hw_context {
+  /* The hardware context is restored with popa;iret. */
   struct pusha           regs;
   struct interrupt_frame iframe;
+  /* Segment selectors are initialized once. They point to the same
+     address range, but code and segment are different. */
+  segment_descriptor_t code_segment;
+  segment_descriptor_t data_segment;
 } __attribute__((packed,aligned(4)));
 
 
 void
-hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc);
+hw_context_init(struct hw_context* ctx, uint32_t pc, uint32_t start_address, uint32_t end_address);
 
 void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx);

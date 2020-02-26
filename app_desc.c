@@ -19,7 +19,7 @@
     extern char name ## _end[]; \
 
 INCBIN(task0, "task0.bin");
-/* INCBIN(task1, "task1.bin"); */
+INCBIN(task1, "task1.bin");
 
 #include "terminal.h"           /* For now. */
 #include "user_tasks.h"
@@ -27,6 +27,8 @@ INCBIN(task0, "task0.bin");
 
 struct context ctx0, ctx1;
 
+/* Note: we could put this description at the beginning of each task. 
+   It would make it easy to pass tasks on the command line. */
 static const struct task_description tasks[] = {
   [0] = {
      .context = &ctx0,
@@ -34,15 +36,15 @@ static const struct task_description tasks[] = {
      .task_begin = task0_begin,
      .task_end = task0_end,     
   },
-  /* [1] = { */
-  /*    .context = &ctx0, */
-  /*    .start_pc = 0, */
-  /*    .task_begin = task1_begin, */
-  /*    .task_end = task1_end,      */
-  /* }, */
+  [1] = {
+     .context = &ctx1,
+     .start_pc = 0,
+     .task_begin = task1_begin,
+     .task_end = task1_end,
+  },
 };
 
 const struct user_tasks_image user_tasks_image = {
-  .nb_tasks = 1,
+  .nb_tasks = 2,
   .tasks = tasks,
 };

@@ -1,7 +1,7 @@
 QEMU_OPTIONS= -d in_asm,int,cpu_reset,pcall,cpu -no-reboot -no-shutdown
 
 LD_FLAGS= -nostdlib -ffreestanding
-CFLAGS = -ffreestanding -O2 -Wall -Wextra -std=gnu99 -fno-pic -foptimize-sibling-calls # -mregparm=3
+CFLAGS = -ffreestanding -O2 -Wall -Wextra -std=gnu11 -fno-pic -foptimize-sibling-calls # -mregparm=3
 CFLAGS += -fno-asynchronous-unwind-tables # Disable generation of eh_frames.
 # CFLAGS += -fwhole-program		  # Aggressive link-time optimisation.
 
@@ -20,7 +20,7 @@ system.exe: $(KERNEL_FILES) app_desc.o
 	if grub-file --is-x86-multiboot $@; then echo multiboot confirmed; else  echo the file is not multiboot; fi
 
 
-app_desc.o: task0.bin task.bin task2.bin app_desc.c
+app_desc.o: task0.bin task1.bin task2.bin app_desc.c
 	gcc -c -m32 $(CFLAGS) app_desc.c
 
 

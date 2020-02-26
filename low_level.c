@@ -343,8 +343,18 @@ void init_interrupts(void){
 
 void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx){
+  /* terminal_print("Switching to %x\n", ctx); */
+
+  /* terminal_print("Code segment is %llx\n", ctx->code_segment);   */
+  /* terminal_print("Data segment is %llx\n", ctx->data_segment); */
+  
   /* We will save the context in the context structure. */
-  tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct hw_context);
+  tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct pusha) + sizeof(struct interrupt_frame);
+  
+  /* We overwrite the protection segment at the same addresses. */
+  gdt[USER_CODE_SEGMENT_INDEX] = ctx->code_segment;  
+  gdt[USER_DATA_SEGMENT_INDEX] = ctx->data_segment;
+  
   load_ds(gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX));
   /* Load the context. */
   asm volatile
@@ -355,7 +365,8 @@ hw_context_switch(struct hw_context* ctx){
 }
 
 
-void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
+void hw_context_init(struct hw_context* ctx, uint32_t pc,
+                     uint32_t start_address, uint32_t end_address){
 #ifdef DEBUG
   ctx->regs.eax = 0xaaaaaaaa;
   ctx->regs.ecx = 0xcccccccc;
@@ -369,8 +380,15 @@ void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
   ctx->iframe.cs = (gdt_segment_selector(3, USER_CODE_SEGMENT_INDEX));
   /* Set only the reserved status flag, that should be set to 1. */
   ctx->iframe.flags = 0x2;
-  ctx->iframe.esp = stack;
+#ifdef DEBUG  
+  ctx->iframe.esp = 0xacacacac;
+#endif
   ctx->iframe.ss = (gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX));
+
+  /* terminal_print("Init ctx is %x; ", ctx); */
+  
+  ctx->code_segment = create_code_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
+  ctx->data_segment = create_data_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);  
 }
 
 struct module_information {

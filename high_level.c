@@ -8,6 +8,7 @@ high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number, int arg1){
   _Static_assert(__builtin_offsetof(struct context,hw_context) == 0);
   struct context *cur_ctx = (struct context *) cur_hw_ctx;
 
+  /* terminal_print("ctx %x syscall number %x", cur_ctx, syscall_number); */
   /* terminal_print("Calling interrupt %x\n", syscall_number); */
   /* terminal_print("Calling interrupt %x\n", arg1); */
   /* terminal_print("Calling interrupt %x\n", cur_hw_ctx); */
@@ -26,8 +27,9 @@ high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number, int arg1){
 
 
 void context_init(struct context * const ctx, uint32_t pc,
+                  uint32_t start, uint32_t end,
                   struct context * const prev){
-  hw_context_init(&ctx->hw_context, 0xabcdef00, pc);
+  hw_context_init(&ctx->hw_context, pc, start, end);
   prev->next = ctx;
 }
 
@@ -39,7 +41,9 @@ high_level_init(void){
   struct context * prev = user_tasks_image.tasks[nb_tasks - 1].context;
   for(unsigned int i = 0; i < nb_tasks; i++){
     struct task_description const *task = &user_tasks_image.tasks[i];
-    context_init(task->context, task->start_pc, prev);
+    context_init(task->context, task->start_pc,
+                 (uint32_t) task->task_begin, (uint32_t) task->task_end,
+                 prev);
     prev = task->context;
   }
   hw_context_switch(&user_tasks_image.tasks[0].context->hw_context);
