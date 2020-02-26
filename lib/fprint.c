@@ -3,6 +3,7 @@
 static void itoa(long,char*);
 static void itox(unsigned long,char*);
 static void lltoa(unsigned long long, char*);
+static void lltox(unsigned long long, char*);
 
 
 
@@ -33,12 +34,14 @@ vfprint(void (*putchar)(unsigned char), char * format,va_list ap)
             char *bif = va_arg(ap,char *);
 	    while(*(bif)!=0) putchar(*bif++);
 	  }
-	else if((format[i]=='l')&&(format[i+1]=='l'))
+	else if((format[i]=='l')&&(format[i+1]=='l')&&(format[i+2]=='x'))
 	  {
             unsigned long long stk = va_arg(ap,unsigned long long);
-	    lltoa(stk,buf);
+	    itox(stk >> 32,buf);
 	    for(int j=0;buf[j]!=0;j++) putchar(buf[j]);
-            i++;
+	    itox(stk & 0xFFFFFFFFULL,buf);
+	    for(int j=0;buf[j]!=0;j++) putchar(buf[j]);            
+            i+=2;
 	  }
         else if(format[i]=='%') putchar('%');
         else {
@@ -109,7 +112,6 @@ static void itox(unsigned long number, char* xout)
     }
   xout[pos]='\0';
 }
-
 
 #if 0
 /* Standalone testing. */
