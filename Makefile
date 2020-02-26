@@ -28,11 +28,11 @@ app1.exe:
 	gcc -m32 $(LD_FLAGS) -T user_task.ld -o app1.exe $(CFLAGS) application.c lib/fprint.c -lgcc
 
 task0.exe: task.c lib/fprint.c user_task.ld
-	gcc -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=0 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+	gcc -flto -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=0 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
 task1.exe: task.c lib/fprint.c user_task.ld
-	gcc -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=1 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+	gcc -flto -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=1 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
 task2.exe: task.c lib/fprint.c user_task.ld
-	gcc -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=2 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+	gcc -flto -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=2 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
 
 %.bin: %.exe
 	objcopy -Obinary -j.all $*.exe $*.bin
