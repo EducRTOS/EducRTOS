@@ -1,15 +1,42 @@
 QEMU_OPTIONS= -d in_asm,int,cpu_reset,pcall,cpu -no-reboot -no-shutdown
 
 LD_FLAGS= -nostdlib -ffreestanding
-CFLAGS = -ffreestanding -O2 -Wall -Wextra -std=gnu99
+CFLAGS = -ffreestanding -O2 -Wall -Wextra -std=gnu99 -fno-pic -foptimize-sibling-calls # -mregparm=3
+CFLAGS += -fno-asynchronous-unwind-tables # Disable generation of eh_frames.
+# CFLAGS += -fwhole-program		  # Aggressive link-time optimisation.
 
-KERNEL_FILES = interrupt.s terminal.c low_level.c high_level.c  lib/fprint.c
+#QEMU_GDB=-s -S
+
+KERNEL_FILES = interrupt.s low_level.c high_level.c terminal.c lib/fprint.c
 
 APPLICATION_FILES = application_desc.c application.c # lib/fprint.c
-all: $(FILES)
-	gcc -m32 $(LD_FLAGS) -T kernel.ld -o myos.bin $(CFLAGS) $(KERNEL_FILES) $(APPLICATION_FILES) -lgcc
-	if grub-file --is-x86-multiboot myos.bin; then echo multiboot confirmed; else  echo the file is not multiboot; fi
-	qemu-system-i386 $(QEMU_OPTIONS) -kernel myos.bin -initrd heap.c 2>&1 | tee out | tail -n 500
+all: system.exe
+	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel system.exe 2>&1 | tee out | tail -n 500
+#	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel myos.exe -initrd task.bin 2>&1 | tee out | tail -n 500
+
+# Compiles everything together in a single system
+system.exe: $(KERNEL_FILES) app_desc.o
+	gcc -m32 $(LD_FLAGS) -T kernel.ld -o $@ $(CFLAGS) $(KERNEL_FILES) app_desc.o -lgcc
+	if grub-file --is-x86-multiboot $@; then echo multiboot confirmed; else  echo the file is not multiboot; fi
+
+
+app_desc.o: task0.bin task.bin task2.bin app_desc.c
+	gcc -c -m32 $(CFLAGS) app_desc.c
+
+
+app1.exe:
+	gcc -m32 $(LD_FLAGS) -T user_task.ld -o app1.exe $(CFLAGS) application.c lib/fprint.c -lgcc
+
+task0.exe: task.c lib/fprint.c user_task.ld
+	gcc -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=0 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+task1.exe: task.c lib/fprint.c user_task.ld
+	gcc -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=1 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+task2.exe: task.c lib/fprint.c user_task.ld
+	gcc -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=2 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+
+%.bin: %.exe
+	objcopy -Obinary -j.all $*.exe $*.bin
+
 
 
 
