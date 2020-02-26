@@ -24,14 +24,14 @@
 /**************** Boot ****************/
 
 #define MULTIBOOT_MAGIC 0x1BADB002
-#define MULTIBOOT_FLAGS (1 << 0) | (1 << 1)
+#define MULTIBOOT_FLAGS ((1 << 0) | (1 << 1))
 #define MULTIBOOT_CHECKSUM -(MULTIBOOT_FLAGS + MULTIBOOT_MAGIC)
 
 struct multiboot {
   uint32_t magic;
   uint32_t flags;
   uint32_t checksum;
-} __attribute__((packed,align(4)));
+} __attribute__((packed,aligned(4)));
 
 const struct multiboot multiboot __attribute__((section(".multiboot"))) = {
    .magic = MULTIBOOT_MAGIC,
@@ -43,7 +43,7 @@ const struct multiboot multiboot __attribute__((section(".multiboot"))) = {
 
 #define KERNEL_STACK_SIZE 1024
 /* System V ABI mandates that stacks are 16-byte aligned. */
-char kernel_stack[KERNEL_STACK_SIZE] __attribute__((aligned(16)));
+static char kernel_stack[KERNEL_STACK_SIZE] __attribute__((used,aligned(16)));
 
 /* Expand x and stringify it; usually what we want. */
 #define XSTRING(x) STRING(x)
