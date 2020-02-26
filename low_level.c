@@ -421,11 +421,13 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
   
   terminal_print("multiboot_information flags: %x\n", mbi->flags);
 
-  if(mbi->flags&3 == 0)
+  #if 0  
+  if((mbi->flags & 3) == 0)
     fatal("Multiboot information flags 3 is not present");
 
   if(mbi->mods_count != 1)
     fatal("This kernel must be loaded with exactly one module, here %d\n", mbi->mods_count);
+  #endif
   
   terminal_writestring("Kernel start\n");
 
