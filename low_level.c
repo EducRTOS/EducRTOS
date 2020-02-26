@@ -132,9 +132,6 @@ static struct tss tss_array[NUM_CPUS];
    CPL = privilege of th code segment selector, this is the current privilege level.
    There is a general protection fault if max(CPL,RPL) >= DPL. */
 
-/* A segment descriptor is an entry in a GDT or LDT. */
-typedef uint64_t segment_descriptor_t;
-
 /* Size of descriptors. */
 #define S16BIT 0
 #define S32BIT 1

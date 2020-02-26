@@ -30,6 +30,10 @@ struct pusha
 } __attribute__((packed));
 
 /* The hardware context is restored with popa;iret; */
+
+/* A segment descriptor is an entry in a GDT or LDT. */
+typedef uint64_t segment_descriptor_t;
+
 struct hw_context {
   struct pusha           regs;
   struct interrupt_frame iframe;
