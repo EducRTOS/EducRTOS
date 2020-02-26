@@ -25,8 +25,8 @@ high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number, int arg1){
 }
 
 
-void context_init(struct context *ctx, uint32_t pc,
-                  struct context *prev){
+void context_init(struct context * const ctx, uint32_t pc,
+                  struct context * const prev){
   hw_context_init(&ctx->hw_context, 0xabcdef00, pc);
   prev->next = ctx;
 }
