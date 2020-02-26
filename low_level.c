@@ -151,13 +151,13 @@ typedef uint64_t segment_descriptor_t;
 /* bool */ accessed,                                                  \
 /* bool */ granularity, /* 0 = par byte, 1 = par block de 4k */ \
 /* bool */ size)  /* 0 = 16 bit, 1 = 32 bit */ \
-  (( (uint64_t) limit & 0x000F0000) |                                   \
-   ((base >> 16) & 0x000000FF) |                                        \
-   (base & 0xFF000000) |                                        \
+  (( (uint64_t) (limit) & 0x000F0000) |                                 \
+   (((base) >> 16) & 0x000000FF) |                                      \
+   ((base) & 0xFF000000) |                                              \
    ((accessed | (permissions << 1) | (normal_segment << 4) | (privilege << 5) | (present << 7)) << 8) | \
    (((size << 2) | (granularity << 3)) << 20)) << 32 |                  \
-  (base << 16) |                                                        \
-  (limit & 0x0000FFFF)
+  ((base) << 16) |                                                      \
+  ((limit) & 0x0000FFFF)
 
 #define create_code_descriptor(base,limit,privilege,conforming,readable,accessed,granularity,size) \
   create_descriptor(base,limit,1,privilege,1,(4 | (conforming << 1) | readable),accessed,granularity,size)
