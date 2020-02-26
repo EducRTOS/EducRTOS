@@ -396,7 +396,7 @@ fatal(char * format,...){
 }
 
 
-void __attribute__((fastcall))
+void __attribute__((fastcall,used))
 low_level_init(uint32_t magic_value, struct multiboot_information *mbi) 
 {
   /* Initialize terminal interface */
