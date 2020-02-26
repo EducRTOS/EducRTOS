@@ -22,15 +22,17 @@ static inline void putchar(unsigned char x){
 #define printf(...) fprint(putchar, __VA_ARGS__)
 
 struct task_description {
-  const struct context *context;
-  const uint32_t start_pc;
+  struct context * const context;
+  uint32_t const start_pc;
+  char* const task_begin;
+  char* const task_end;  
 };
 
 
 /* High-level description of the application. */
 extern const struct user_tasks_image {
-  const unsigned int nb_tasks;
-  const struct task_description *tasks;
+  unsigned int const nb_tasks;
+  struct task_description const *const tasks;
 } user_tasks_image;
 
 /* Provided by the application */
