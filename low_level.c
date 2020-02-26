@@ -189,6 +189,12 @@ enum gdt_indices {
  SIZE_GDT
 };
 
+/* Because we use that in file-scope assembly, this must be a macro
+   instead of an enum. */
+#define _KERNEL_DATA_SEGMENT_INDEX   2
+_Static_assert(_KERNEL_DATA_SEGMENT_INDEX == KERNEL_DATA_SEGMENT_INDEX);
+
+
 static segment_descriptor_t gdt[SIZE_GDT] = {
                               
  [NULL_SEGMENT_INDEX] = null_descriptor,
@@ -229,11 +235,19 @@ static void register_tss_in_gdt(int idx, struct tss *tss, size_t size){
 /* mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n \ */
 
 /* Do we need CLD in all interrupt handlers? static analysis will tell! */
+
+/* This:
+   - Saves the registers in the context structure;
+   - Restores the cld flag (maybe not useful);
+   - Restores the ds register (cs and ss are restored by the interrupt mechanism)
+   - Loads the kernel stack, call high_level_syscall  */
 asm("\
 .global interrupt_handler\n\t\
 interrupt_handler:\n\
 	pusha\n\
 	cld\n\
+        movw $(" XSTRING(_KERNEL_DATA_SEGMENT_INDEX) " << 3), %ax \n \
+        movw %ax, %ds\n\
         mov %esp, %eax\n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
         /* Note: must use the fastcall discipline */\n\
@@ -334,7 +348,7 @@ void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx){
   /* We will save the context in the context structure. */
   tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct hw_context);
-  /* TODO: also load ds when we load a hardware context. */  
+  load_ds(gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX));
   /* Load the context. */
   asm volatile
     ("mov %0,%%esp \n\
