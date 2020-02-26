@@ -33,12 +33,12 @@ void context_init(struct context * const ctx, uint32_t pc,
 
 void __attribute__((noreturn))
 high_level_init(void){
-  unsigned int nb_tasks = user_tasks_image.nb_tasks;
+  unsigned int const nb_tasks = user_tasks_image.nb_tasks;
 
   /* Initialize the circular list of contexts. */
-  struct context *prev = user_tasks_image.tasks[nb_tasks - 1].context;
+  struct context * prev = user_tasks_image.tasks[nb_tasks - 1].context;
   for(unsigned int i = 0; i < nb_tasks; i++){
-    struct task_description *task = &user_tasks_image.tasks[i];
+    struct task_description const *task = &user_tasks_image.tasks[i];
     context_init(task->context, task->start_pc, prev);
     prev = task->context;
   }
