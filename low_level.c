@@ -43,7 +43,7 @@ const struct multiboot multiboot __attribute__((section(".multiboot"))) = {
 
 #define KERNEL_STACK_SIZE 1024
 /* System V ABI mandates that stacks are 16-byte aligned. */
-static char kernel_stack[KERNEL_STACK_SIZE] __attribute__((aligned(16)));
+char kernel_stack[KERNEL_STACK_SIZE] __attribute__((aligned(16)));
 
 /* Expand x and stringify it; usually what we want. */
 #define XSTRING(x) STRING(x)
@@ -362,6 +362,13 @@ void hw_context_init(struct hw_context* ctx, uint32_t stack, uint32_t pc){
   ctx->iframe.ss = (gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX));
 }
 
+struct module_information {
+  char *mod_start;
+  char *mod_end;
+  char *string;
+  uint32_t reserved;
+}  __attribute__((packed));
+
 struct multiboot_information {
   uint32_t flags;
   /* If flags[0]. */
@@ -373,7 +380,7 @@ struct multiboot_information {
   uint32_t cmdline;
   /* If flags[3]. */
   uint32_t mods_count;
-  uint32_t mods_addr;
+  struct module_information *mods_addr;
 }  __attribute__((packed));
 
 
