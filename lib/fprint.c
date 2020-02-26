@@ -3,10 +3,6 @@
 static void itoa(long,char*);
 static void itox(unsigned long,char*);
 static void lltoa(unsigned long long, char*);
-static void lltox(unsigned long long, char*);
-
-
-
 
 void
 vfprint(void (*putchar)(unsigned char), char * format,va_list ap)
@@ -43,6 +39,14 @@ vfprint(void (*putchar)(unsigned char), char * format,va_list ap)
 	    for(int j=0;buf[j]!=0;j++) putchar(buf[j]);            
             i+=2;
 	  }
+	else if((format[i]=='l')&&(format[i+1]=='l')&&(format[i+2]=='u'))
+	  {
+            unsigned long long stk = va_arg(ap,unsigned long long);
+            lltoa(stk, buf);
+	    for(int j=0;buf[j]!=0;j++) putchar(buf[j]);
+            i+=2;
+	  }
+        
         else if(format[i]=='%') putchar('%');
         else {
           char *str = "<unsupported conversion: `";
