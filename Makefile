@@ -15,17 +15,13 @@ all: system.exe
 #	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel myos.exe -initrd task.bin 2>&1 | tee out | tail -n 500
 
 # Compiles everything together in a single system
-system.exe: $(KERNEL_FILES) app_desc.o
-	gcc -m32 $(LD_FLAGS) -T kernel.ld -o $@ $(CFLAGS) $(KERNEL_FILES) app_desc.o -lgcc
+system.exe: $(KERNEL_FILES) system_desc.o
+	gcc -m32 $(LD_FLAGS) -T kernel.ld -o $@ $(CFLAGS) $(KERNEL_FILES) system_desc.o -lgcc
 	if grub-file --is-x86-multiboot $@; then echo multiboot confirmed; else  echo the file is not multiboot; fi
 
 
-app_desc.o: task0.bin task1.bin task2.bin app_desc.c
-	gcc -c -m32 $(CFLAGS) app_desc.c
-
-
-app1.exe:
-	gcc -m32 $(LD_FLAGS) -T user_task.ld -o app1.exe $(CFLAGS) application.c lib/fprint.c -lgcc
+system_desc.o: task0.bin task1.bin task2.bin system_desc.c
+	gcc -c -m32 $(CFLAGS) system_desc.c
 
 task0.exe: task.c lib/fprint.c user_task.ld
 	gcc -flto -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=0 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
