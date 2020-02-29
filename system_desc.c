@@ -25,19 +25,21 @@ INCBIN(task1, "task1.bin");
 #include "user_tasks.h"
 #include "high_level.h"
 
-struct context ctx0, ctx1;
+
+#define NB_TASKS 2
+#include "system_desc.h"
 
 /* Note: we could put this description at the beginning of each task. 
    It would make it easy to pass tasks on the command line. */
 static const struct task_description tasks[] = {
   [0] = {
-     .context = &ctx0,
+     .context = &system_contexts[0],
      .start_pc = 0,
      .task_begin = task0_begin,
      .task_end = task0_end,     
   },
   [1] = {
-     .context = &ctx1,
+     .context = &system_contexts[1],
      .start_pc = 0,
      .task_begin = task1_begin,
      .task_end = task1_end,

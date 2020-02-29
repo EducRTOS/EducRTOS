@@ -45,7 +45,8 @@ struct hw_context {
 
 
 void
-hw_context_init(struct hw_context* ctx, uint32_t pc, uint32_t start_address, uint32_t end_address);
+hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
+                uint32_t start_address, uint32_t end_address);
 
 void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx);
@@ -79,5 +80,24 @@ syscall2(uint32_t arg1, uint32_t arg2){
                 "c"(arg2)
                 );
 }
+
+
+/**************** For use by system description. ****************/
+
+#define NUM_CPUS 1
+
+enum gdt_indices {
+ NULL_SEGMENT_INDEX,
+ KERNEL_CODE_SEGMENT_INDEX,
+ KERNEL_DATA_SEGMENT_INDEX,
+ TSS_SEGMENTS_FIRST_INDEX,
+ NEXT = TSS_SEGMENTS_FIRST_INDEX + NUM_CPUS,
+ FIXED_SIZE_GDT,
+ START_USER_INDEX = FIXED_SIZE_GDT, /* (code,data descriptors). */
+};
+
+#define LOW_LEVEL_SYSTEM_DESC(NB_TASKS)                                         \
+  segment_descriptor_t system_gdt[FIXED_SIZE_GDT + 2 * NB_TASKS];
+
 
 #endif /* __LOW_LEVEL_H__ */

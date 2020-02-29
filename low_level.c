@@ -21,6 +21,8 @@
 #error "Compile for 32 bit x86"
 #endif
 
+#include "user_tasks.h"
+
 /**************** Boot ****************/
 
 #define MULTIBOOT_MAGIC 0x1BADB002
@@ -172,37 +174,10 @@ static const segment_descriptor_t null_descriptor = create_descriptor(0,0,0,0,0,
 static const segment_descriptor_t kernel_code_descriptor = create_code_descriptor(0,0xFFFFFFFF,0,0,1,0,1,S32BIT);
 static const segment_descriptor_t kernel_data_descriptor = create_data_descriptor(0,0xFFFFFFFF,0,0,1,0,1,S32BIT);
 
-/* Does not work because &tss0 is not a compile-time constant, it is split which cannot be done by the linker. */
-//static const descriptor_t tss0_descriptor = create_tss_descriptor((&tss0),sizeof(tss0),0,1,0);
-
-enum gdt_indices {
- NULL_SEGMENT_INDEX,
- KERNEL_CODE_SEGMENT_INDEX,
- KERNEL_DATA_SEGMENT_INDEX,
- USER_CODE_SEGMENT_INDEX, 
- USER_DATA_SEGMENT_INDEX, 
- TSS_SEGMENTS_FIRST_INDEX,
- NEXT = TSS_SEGMENTS_FIRST_INDEX + NUM_CPUS,
- SIZE_GDT
-};
-
 /* Because we use that in file-scope assembly, this must be a macro
    instead of an enum. */
 #define _KERNEL_DATA_SEGMENT_INDEX   2
 _Static_assert(_KERNEL_DATA_SEGMENT_INDEX == KERNEL_DATA_SEGMENT_INDEX);
-
-
-static segment_descriptor_t gdt[SIZE_GDT] = {
-                              
- [NULL_SEGMENT_INDEX] = null_descriptor,
- [KERNEL_CODE_SEGMENT_INDEX] = kernel_code_descriptor,
- [KERNEL_DATA_SEGMENT_INDEX] = kernel_data_descriptor,
- [USER_CODE_SEGMENT_INDEX] = create_code_descriptor(0,0xFFFFFFFF,3,0,1,0,1,S32BIT),
- [USER_DATA_SEGMENT_INDEX] = create_data_descriptor(0,0xFFFFFFFF,3,0,1,0,1,S32BIT),
- /* We perform software task switching, but still need one TSS by processor. */
- // [TSS0_SEGMENT_INDEX] = 0       /* cannot be a compile-time constant. */
- 
-};
 
 /* Address of the gdt, and size in bytes. */
 static inline void lgdt(segment_descriptor_t *gdt, int size)
@@ -219,7 +194,7 @@ static inline void lgdt(segment_descriptor_t *gdt, int size)
 
 /* Because of how we manipulate the address, create_tss_descriptor
    cannot be a compile-time constant in C. */
-static void register_tss_in_gdt(int idx, struct tss *tss, size_t size){
+static void register_tss_in_gdt(segment_descriptor_t *gdt, int idx, struct tss *tss, size_t size){
   segment_descriptor_t tss_descriptor = create_tss_descriptor((uint32_t) tss,
                                                        (size <= 0x67? 0x67 : size),
                                                        3,0,0);
@@ -350,12 +325,8 @@ hw_context_switch(struct hw_context* ctx){
   
   /* We will save the context in the context structure. */
   tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct pusha) + sizeof(struct interrupt_frame);
-  
-  /* We overwrite the protection segment at the same addresses. */
-  gdt[USER_CODE_SEGMENT_INDEX] = ctx->code_segment;  
-  gdt[USER_DATA_SEGMENT_INDEX] = ctx->data_segment;
-  
-  load_ds(gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX));
+
+  load_ds_reg(ctx->iframe.ss);
   /* Load the context. */
   asm volatile
     ("mov %0,%%esp \n\
@@ -365,7 +336,7 @@ hw_context_switch(struct hw_context* ctx){
 }
 
 
-void hw_context_init(struct hw_context* ctx, uint32_t pc,
+void hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
                      uint32_t start_address, uint32_t end_address){
 #ifdef DEBUG
   ctx->regs.eax = 0xaaaaaaaa;
@@ -377,18 +348,21 @@ void hw_context_init(struct hw_context* ctx, uint32_t pc,
   ctx->regs.edi = 0x77777777;
 #endif  
   ctx->iframe.eip = pc;
-  ctx->iframe.cs = (gdt_segment_selector(3, USER_CODE_SEGMENT_INDEX));
+  ctx->iframe.cs = (gdt_segment_selector(3, START_USER_INDEX + 2 * idx));
   /* Set only the reserved status flag, that should be set to 1. */
   ctx->iframe.flags = 0x2;
 #ifdef DEBUG  
   ctx->iframe.esp = 0xacacacac;
 #endif
-  ctx->iframe.ss = (gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX));
+  ctx->iframe.ss = (gdt_segment_selector(3, START_USER_INDEX + 2 * idx + 1));
 
   /* terminal_print("Init ctx is %x; ", ctx); */
-  
-  ctx->code_segment = create_code_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
-  ctx->data_segment = create_data_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);  
+
+  segment_descriptor_t * const gdt = user_tasks_image.low_level.system_gdt;
+  gdt[START_USER_INDEX + 2 * idx] =
+    create_code_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
+  gdt[START_USER_INDEX + 2 * idx + 1] =
+    create_data_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);  
 }
 
 struct module_information {
@@ -445,11 +419,16 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
   #endif
   
   terminal_writestring("Kernel start\n");
-
+  
   /* Up to now we used the segments loaded by grub. Set up a new gdt
      and make sure that the segments use it. */
   {
-    lgdt(gdt,sizeof(gdt));
+    segment_descriptor_t *gdt = user_tasks_image.low_level.system_gdt;
+    gdt[NULL_SEGMENT_INDEX] = null_descriptor;
+    gdt[KERNEL_CODE_SEGMENT_INDEX] = kernel_code_descriptor;
+    gdt[KERNEL_DATA_SEGMENT_INDEX] = kernel_data_descriptor;
+
+    lgdt(gdt,sizeof(segment_descriptor_t) * (FIXED_SIZE_GDT + 2 * user_tasks_image.nb_tasks));
     terminal_writestring("After lgdt\n");
 
     load_code_segment(gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX));
@@ -457,12 +436,12 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
     
     load_data_segments(gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX));
     terminal_writestring("after load data segments\n");
-  }
+  
 
   /* Set-up the tss and load the task register for CPU 0. */
-  {
+    /* TODO: inline this function. */
     for(int i = 0; i < NUM_CPUS; i++){
-      register_tss_in_gdt(i + TSS_SEGMENTS_FIRST_INDEX, &tss_array[i], sizeof(tss_array[i]));
+      register_tss_in_gdt(gdt, i + TSS_SEGMENTS_FIRST_INDEX, &tss_array[i], sizeof(tss_array[i]));
 
       tss_array[i].ss0 = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);
       tss_array[i].esp0 = (uint32_t) &kernel_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)];

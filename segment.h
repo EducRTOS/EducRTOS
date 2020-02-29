@@ -5,7 +5,7 @@
 /* Returns a segment selector. */
 
 #define __segment_selector(privilege,in_ldt,index)                     \
-  ((privilege & 3) | ((in_ldt? 1 : 0) << 2) | (index << 3))
+  (((privilege) & 3) | (((in_ldt)? 1 : 0) << 2) | ((index) << 3))
 
 #define gdt_segment_selector(privilege,index) __segment_selector(privilege,false,index)
 #define ldt_segment_selector(privilege,index) __segment_selector(privilege,true,index)
@@ -36,7 +36,15 @@ static inline void load_data_segments(segment_selector_t newds){
 }
 
 
-static inline void load_ds(segment_selector_t newds){
+static inline void load_ds_reg(segment_selector_t newds){
+  asm volatile ("movw %0,  %%ds\n"
+                : 
+                : "g"(newds) 
+                : "memory");
+}
+
+
+static inline void load_ds_imm(segment_selector_t newds){
   asm volatile ("movw %0, %%ax   \n\
                  movw %%ax,  %%ds\n"
                 :

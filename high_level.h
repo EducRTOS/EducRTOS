@@ -24,5 +24,9 @@ high_level_syscall(struct hw_context *cur_ctx, int syscall_number, int arg1);
 void high_level_init(void);
 
 
+/**************** For system description ****************/
+
+#define HIGH_LEVEL_SYSTEM_DESC(NB_TASKS)                \
+  struct context system_contexts[NB_TASKS];
 
 #endif /* __HIGH_LEVEL_H__ */
