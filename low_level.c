@@ -441,26 +441,4 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
   terminal_writestring("Switching to userpsace\n");
 
   high_level_init();
-
-  /* Now I should enter ring 3, and make a syscall. */
-  /* https://wiki.osdev.org/SYSENTER // quite simple, should support segmentation, and also works on AMD */
-  /* Bof, non il faut faire un iret je pense. */
-
-    /* https://manybutfinite.com/post/cpu-rings-privilege-and-protection/ */
-    /* => Explique les privilege levels: CPL, DPL, RPL */
-    
-  /* TODO: Fixed number of tasks. We could prove correctness without a configuration. */
-  
-  //  while(1);
-
-  /* terminal_writestring("before reload data segments\n"); */
-  
-  //reload_data_segments(0,false,KERNEL_DATA_SEGMENT_INDEX);
-
-
- 
-  /* /\* Newline support is left as an exercise. *\/ */
-  /* terminal_writestring("Hello, kernel World!\n Hello again!\n"); */
 }
-
-/* MAYBE: rename kernel.c into context-switch.c; this is the low-level part of the kernel. */
