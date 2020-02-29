@@ -164,8 +164,9 @@ static struct tss tss_array[NUM_CPUS];
 #define create_data_descriptor(base,limit,privilege,growdown,writable,accessed,granularity,size) \
   create_descriptor(base,limit,1,privilege,1,(0 | (growdown << 1) | writable),accessed,granularity,size)
 
+/* TSS descriptors must have a minimum size of 0x67. */
 #define create_tss_descriptor(base,limit,privilege,busy,granularity)    \
-  create_descriptor(base,limit,1,privilege,0,(4 | 0 << 1 | busy),1,granularity,0)
+  create_descriptor(base,((limit) <= 0x67?0x67:(limit)),1,privilege,0,(4 | 0 << 1 | busy),1,granularity,0)
 
 
 static const segment_descriptor_t null_descriptor = create_descriptor(0,0,0,0,0,0,0,0,0);
@@ -191,20 +192,7 @@ static inline void lgdt(segment_descriptor_t *gdt, int size)
   asm volatile ("lgdt %0": : "m" (gdtr) : "memory");
 }
 
-
-/* Because of how we manipulate the address, create_tss_descriptor
-   cannot be a compile-time constant in C. */
-static void register_tss_in_gdt(segment_descriptor_t *gdt, int idx, struct tss *tss, size_t size){
-  segment_descriptor_t tss_descriptor = create_tss_descriptor((uint32_t) tss,
-                                                       (size <= 0x67? 0x67 : size),
-                                                       3,0,0);
-  /* The descriptor should not be busy if we want to load the tss. */
-  gdt[idx] = tss_descriptor;
-}
-
 /**************** Interrupts ****************/
-
-/* mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n \ */
 
 /* Do we need CLD in all interrupt handlers? static analysis will tell! */
 
@@ -427,6 +415,13 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
     gdt[NULL_SEGMENT_INDEX] = null_descriptor;
     gdt[KERNEL_CODE_SEGMENT_INDEX] = kernel_code_descriptor;
     gdt[KERNEL_DATA_SEGMENT_INDEX] = kernel_data_descriptor;
+    /* Initialization of TSS. */
+    for(int i = 0; i < NUM_CPUS; i++){
+      gdt[TSS_SEGMENTS_FIRST_INDEX + i] =
+        create_tss_descriptor((uint32_t) &tss_array[i], sizeof(tss_array[i]), 3,0,0);
+      tss_array[i].ss0 = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);
+      tss_array[i].esp0 = (uint32_t) &kernel_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)];
+    }
 
     lgdt(gdt,sizeof(segment_descriptor_t) * (FIXED_SIZE_GDT + 2 * user_tasks_image.nb_tasks));
     terminal_writestring("After lgdt\n");
@@ -436,17 +431,7 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
     
     load_data_segments(gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX));
     terminal_writestring("after load data segments\n");
-  
-
-  /* Set-up the tss and load the task register for CPU 0. */
-    /* TODO: inline this function. */
-    for(int i = 0; i < NUM_CPUS; i++){
-      register_tss_in_gdt(gdt, i + TSS_SEGMENTS_FIRST_INDEX, &tss_array[i], sizeof(tss_array[i]));
-
-      tss_array[i].ss0 = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);
-      tss_array[i].esp0 = (uint32_t) &kernel_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)];
-      
-    }
+    
     load_tr(gdt_segment_selector(0,TSS_SEGMENTS_FIRST_INDEX));
   }
 
