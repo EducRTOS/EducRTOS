@@ -257,8 +257,6 @@ static gate_descriptor_t idt[NB_GATE_DESCRIPTORS];
 
 extern void dummy_interrupt_handler(void);
 
-
-
 void init_interrupts(void){
   for(int i = 0; i < NB_GATE_DESCRIPTORS; i++){
     idt[i] = create_interrupt_gate_descriptor((uintptr_t) &dummy_interrupt_handler,
@@ -279,10 +277,6 @@ void init_interrupts(void){
 
 }
 
- 
-
-
-
 /* Here is what interrupt does:
 
    - Compare the CPL with the privilege level of the gate
@@ -297,12 +291,6 @@ void init_interrupts(void){
 
 
 /****************  ****************/
-
-
-
-
-
-//struct hw_context *cur_ctx;
 
 void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx){
