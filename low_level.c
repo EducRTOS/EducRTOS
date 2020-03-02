@@ -203,6 +203,7 @@ static inline void lgdt(segment_descriptor_t *gdt, int size)
    - Loads the kernel stack, call high_level_syscall  */
 asm("\
 .global interrupt_handler\n\t\
+.type interrupt_handler, @function\n\
 interrupt_handler:\n\
 	pusha\n\
 	cld\n\
@@ -210,9 +211,10 @@ interrupt_handler:\n\
         movw %ax, %ds\n\
         mov %esp, %eax\n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
-        /* Note: must use the fastcall discipline */\n\
+        /* Note: must use the regparm3 calling ABI */\n\
 	call high_level_syscall\n\
         jmp error_infinite_loop\n\
+.size interrupt_handler, . - interrupt_handler\n\
 ");
 
 extern void interrupt_handler(void);
