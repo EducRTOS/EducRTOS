@@ -7,7 +7,7 @@ CFLAGS += -fno-asynchronous-unwind-tables # Disable generation of eh_frames.
 
 #QEMU_GDB=-s -S
 
-KERNEL_FILES = interrupt.s low_level.c high_level.c terminal.c lib/fprint.c
+KERNEL_FILES = low_level.c high_level.c terminal.c lib/fprint.c
 
 APPLICATION_FILES = application_desc.c application.c # lib/fprint.c
 all: system.exe

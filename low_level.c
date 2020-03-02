@@ -255,6 +255,30 @@ static gate_descriptor_t idt[NB_GATE_DESCRIPTORS];
  /*    [0x00] = create_interrupt_gate_descriptor((uint32_t) doit,0,0,S32BIT) */
  /* }; */
 
+
+
+asm("\
+.global dummy_interrupt_handler\n\t\
+.type dummy_interrupt_handler, @function\n\
+dummy_interrupt_handler:\n\
+dummy_interrupt_handler:\n\
+        pusha                                   \n\
+        cld                                     \n\
+        jmp interrupt_handler2                  \n\
+        popa                                    \n\
+        iret                                    \n\
+        nop                                     \n\
+interrupt_handler2:                             \n\
+        jmp interrupt_handler3                  \n\
+        nop                                     \n\
+interrupt_handler3:                             \n\
+        cli                                     \n\
+        hlt                                     \n\
+        jmp interrupt_handler3                  \n\
+.size dummy_interrupt_handler, . - dummy_interrupt_handler\n\
+");
+
+
 extern void dummy_interrupt_handler(void);
 
 void init_interrupts(void){
