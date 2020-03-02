@@ -436,13 +436,13 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
     }
 
     lgdt(gdt,sizeof(segment_descriptor_t) * (FIXED_SIZE_GDT + 2 * user_tasks_image.nb_tasks));
-    terminal_writestring("After lgdt\n");
+    /* terminal_writestring("After lgdt\n"); */
 
     load_code_segment(gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX));
-    terminal_writestring("after load_cs\n");
+    /* terminal_writestring("after load_cs\n"); */
     
     load_data_segments(gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX));
-    terminal_writestring("after load data segments\n");
+    /* terminal_writestring("after load data segments\n"); */
     
     load_tr(gdt_segment_selector(0,TSS_SEGMENTS_FIRST_INDEX));
   }
