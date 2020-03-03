@@ -351,8 +351,9 @@ void hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
 #endif  
   ctx->iframe.eip = pc;
   ctx->iframe.cs = (gdt_segment_selector(3, START_USER_INDEX + 2 * idx));
-  /* Set only the reserved status flag, that should be set to 1. */
-  ctx->iframe.flags = 0x2;
+  /* Set only the reserved status flag, that should be set to 1; and
+     the interrupt enable flag. */
+  ctx->iframe.flags = (1 << 1) | (1 << 9);
 #ifdef DEBUG  
   ctx->iframe.esp = 0xacacacac;
 #endif
