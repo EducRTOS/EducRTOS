@@ -403,12 +403,12 @@ void __attribute__((fastcall,used))
 low_level_init(uint32_t magic_value, struct multiboot_information *mbi) 
 {
   /* Initialize terminal interface */
-  terminal_initialize();
+  //terminal_initialize();
 
   if(magic_value != 0x2BADB002)
     fatal("Not loaded by a multiboot loader");
   
-  terminal_print("multiboot_information flags: %x\n", mbi->flags);
+  //terminal_print("multiboot_information flags: %x\n", mbi->flags);
 
   #if 0  
   if((mbi->flags & 3) == 0)
@@ -418,7 +418,7 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
     fatal("This kernel must be loaded with exactly one module, here %d\n", mbi->mods_count);
   #endif
   
-  terminal_writestring("Kernel start\n");
+  //terminal_writestring("Kernel start\n");
   
   /* Up to now we used the segments loaded by grub. Set up a new gdt
      and make sure that the segments use it. */
@@ -436,13 +436,13 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
     }
 
     lgdt(gdt,sizeof(segment_descriptor_t) * (FIXED_SIZE_GDT + 2 * user_tasks_image.nb_tasks));
-    terminal_writestring("After lgdt\n");
+    //terminal_writestring("After lgdt\n");
 
     load_code_segment(gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX));
-    terminal_writestring("after load_cs\n");
+    //terminal_writestring("after load_cs\n");
     
     load_data_segments(gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX));
-    terminal_writestring("after load data segments\n");
+    //terminal_writestring("after load data segments\n");
     
     load_tr(gdt_segment_selector(0,TSS_SEGMENTS_FIRST_INDEX));
   }
@@ -450,7 +450,7 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
   /* Set-up the idt. */
   init_interrupts();
 
-  terminal_writestring("Switching to userpsace\n");
+  //terminal_writestring("Switching to userpsace\n");
 
   high_level_init();
 }
