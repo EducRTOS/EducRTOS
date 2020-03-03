@@ -9,6 +9,7 @@ CFLAGS += -g 			          # Debug annotations.
 #QEMU_GDB=-s -S
 
 KERNEL_FILES = low_level.c high_level.c terminal.c lib/fprint.c
+M32 ?= -m32
 
 APPLICATION_FILES = application_desc.c application.c # lib/fprint.c
 all: system.exe
@@ -17,25 +18,26 @@ all: system.exe
 
 # Compiles everything together in a single system
 system.exe: $(KERNEL_FILES) system_desc.o
-	gcc -m32 $(LD_FLAGS) -T kernel.ld -o $@ $(CFLAGS) $(KERNEL_FILES) system_desc.o -lgcc
+	gcc $(M32) $(LD_FLAGS) -T kernel.ld -o $@ $(CFLAGS) $(KERNEL_FILES) system_desc.o -lgcc
 	if grub-file --is-x86-multiboot $@; then echo multiboot confirmed; else  echo the file is not multiboot; fi
 
 
 system_desc.o: task0.bin task1.bin task2.bin system_desc.c
-	gcc -c -m32 $(CFLAGS) system_desc.c
+	gcc -c $(M32) $(CFLAGS) system_desc.c
 
 task0.exe: task.c lib/fprint.c user_task.ld
-	gcc -flto -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=0 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+	gcc $(M32) $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=0 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
 task1.exe: task.c lib/fprint.c user_task.ld
-	gcc -flto -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=1 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+	gcc $(M32) $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=1 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
 task2.exe: task.c lib/fprint.c user_task.ld
-	gcc -flto -m32 $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=2 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+	gcc $(M32) $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=2 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
 
 %.bin: %.exe
 	objcopy -Obinary -j.all $*.exe $*.bin
 
-
-
+.PHONY: clean
+clean:
+	rm *.exe *.bin *.o
 
 # Note: xorriso and mtools should be installed for grub-mkrescure to work.
 # myos.iso:
