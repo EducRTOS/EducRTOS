@@ -25,6 +25,14 @@ high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number, int arg1){
   hw_context_switch(&cur_ctx->hw_context);
 }
 
+void __attribute__((noreturn,used))
+high_level_timer_interrupt_handler(struct hw_context *cur_hw_ctx){
+  _Static_assert(__builtin_offsetof(struct context,hw_context) == 0);
+  struct context *cur_ctx = (struct context *) cur_hw_ctx;
+
+  while(1);
+}
+
 
 void context_init(struct context * const ctx, int idx,
                   uint32_t pc,
