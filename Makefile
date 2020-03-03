@@ -1,14 +1,19 @@
 QEMU_OPTIONS= -d in_asm,int,cpu_reset,pcall,cpu -no-reboot -no-shutdown
 
+QEMU_OPTIONS += -machine q35 # More recent hardware.
+# Support for TSC Deadline. But no log anymore..
+#QEMU_OPTIONS += -cpu max -machine pc,kernel_irqchip=on,accel=kvm
+
 LD_FLAGS= -nostdlib -ffreestanding
 CFLAGS = -ffreestanding -O2 -Wall -Wextra -std=gnu11 -fno-pic -foptimize-sibling-calls # -mregparm=3
 CFLAGS += -fno-asynchronous-unwind-tables # Disable generation of eh_frames.
+# CFLAGS += -msse2 # Better atomic operations, but does not work by default with Qemu.
 # CFLAGS += -fwhole-program		  # Aggressive link-time optimisation.
 CFLAGS += -g 			          # Debug annotations.
 
 #QEMU_GDB=-s -S
 
-KERNEL_FILES = low_level.c high_level.c terminal.c lib/fprint.c
+KERNEL_FILES = low_level.c high_level.c terminal.c lib/fprint.c pit_timer.c
 M32 ?= -m32
 
 APPLICATION_FILES = application_desc.c application.c # lib/fprint.c

@@ -53,6 +53,10 @@ hw_context_switch(struct hw_context* ctx);
 
 
 #define SOFTWARE_INTERRUPT_NUMBER 0x27
+/* We initialize the pic here, so 0x40...47 are for the master PIC,
+   and 0x48...4F for the slave PIC. */
+#define TIMER_INTERRUPT_NUMBER 0x40
+#define SPURIOUS_TIMER_INTERRUPT_NUMBER 0x48
 
 /**************** For use by user tasks. ****************/
 

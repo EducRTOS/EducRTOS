@@ -196,26 +196,55 @@ static inline void lgdt(segment_descriptor_t *gdt, int size)
 
 /* Do we need CLD in all interrupt handlers? static analysis will tell! */
 
+extern void ignore_interrupt_handler(void);
+asm("\
+.global ignore_interrupt_handler\n\t\
+.type ignore_interrupt_handler, @function\n\
+ignore_interrupt_handler:\n\
+        iret\n\
+.size ignore_interrupt_handler, . - ignore_interrupt_handler\n\
+");
+
+
 /* This:
    - Saves the registers in the context structure;
    - Restores the cld flag (maybe not useful);
    - Restores the ds register (cs and ss are restored by the interrupt mechanism)
    - Loads the kernel stack, call high_level_syscall  */
+extern void asm_syscall_handler(void);
 asm("\
-.global interrupt_handler\n\t\
-interrupt_handler:\n\
+.global asm_syscall_handler\n\t\
+.type asm_syscall_handler, @function\n\
+asm_syscall_handler:\n\
 	pusha\n\
 	cld\n\
         movw $(" XSTRING(_KERNEL_DATA_SEGMENT_INDEX) " << 3), %ax \n \
         movw %ax, %ds\n\
         mov %esp, %eax\n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
-        /* Note: must use the fastcall discipline */\n\
+        /* Note: must use the regparm3 calling ABI */\n\
 	call high_level_syscall\n\
         jmp error_infinite_loop\n\
+.size asm_syscall_handler, . - asm_syscall_handler\n\
 ");
 
-extern void interrupt_handler(void);
+/* MAYBE: share the code. */
+extern void asm_timer_interrupt_handler(void);
+asm("\
+.global asm_timer_interrupt_handler\n\t\
+.type asm_timer_interrupt_handler, @function\n\
+asm_timer_interrupt_handler:\n\
+	pusha\n\
+	cld\n\
+        movw $(" XSTRING(_KERNEL_DATA_SEGMENT_INDEX) " << 3), %ax \n \
+        movw %ax, %ds\n\
+        mov %esp, %eax\n\
+	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
+        /* Note: must use the regparm3 calling ABI. */\n\
+	call timer_interrupt_handler\n\
+        jmp error_infinite_loop\n\
+.size asm_timer_interrupt_handler, . - asm_timer_interrupt_handler\n\
+");
 
 void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx);
@@ -249,48 +278,56 @@ static gate_descriptor_t idt[NB_GATE_DESCRIPTORS];
    (size << 11) |                                                       \
    (0b00110ULL << 8ULL))) << 32ULL))
 
- /* Address of variables cannot be constants.. */
- /* gate_descriptor_t idt[] = { */
- /*  //  [0x00] = create_interrupt_gate_descriptor(doit,0,0,S32BIT), */
- /*    [0x00] = create_interrupt_gate_descriptor((uint32_t) doit,0,0,S32BIT) */
- /* }; */
+/* Trap gate are like interrupt gates, but does not disable the interrupts. */
+#define create_trap_gate_descriptor(func_ptr,code_segment_selector,privilege,size) \
+((((func_ptr) & 0xFFFFULL) |                                               \
+  ((code_segment_selector) << 16)) |                                    \
+ ((((func_ptr) & 0xFFFF0000) |                                          \
+  ((1 << 15) |                                                          \
+   (privilege << 13) |                                                  \
+   (size << 11) |                                                       \
+   (0b00111ULL << 8ULL))) << 32ULL))
 
-
-
+extern void unimplemented_interrupt_handler(void);
 asm("\
-.global dummy_interrupt_handler\n\t\
-.type dummy_interrupt_handler, @function\n\
-dummy_interrupt_handler:\n\
-dummy_interrupt_handler:\n\
-        pusha                                   \n\
-        cld                                     \n\
-        jmp interrupt_handler2                  \n\
-        popa                                    \n\
-        iret                                    \n\
-        nop                                     \n\
-interrupt_handler2:                             \n\
-        jmp interrupt_handler3                  \n\
-        nop                                     \n\
-interrupt_handler3:                             \n\
+.global unimplemented_interrupt_handler\n\t\
+.type unimplemented_interrupt_handler, @function\n\
+unimplemented_interrupt_handler:\n\
+        jmp unimplemented_interrupt_handler2    \n\
+unimplemented_interrupt_handler2:               \n\
         cli                                     \n\
         hlt                                     \n\
-        jmp interrupt_handler3                  \n\
-.size dummy_interrupt_handler, . - dummy_interrupt_handler\n\
+        jmp unimplemented_interrupt_handler2    \n\
+.size unimplemented_interrupt_handler, . - unimplemented_interrupt_handler\n\
 ");
 
 
-extern void dummy_interrupt_handler(void);
+
 
 void init_interrupts(void){
+  init_pic();
+  init_apic();
+  
   for(int i = 0; i < NB_GATE_DESCRIPTORS; i++){
-    idt[i] = create_interrupt_gate_descriptor((uintptr_t) &dummy_interrupt_handler,
+    idt[i] = create_interrupt_gate_descriptor((uintptr_t) &unimplemented_interrupt_handler,
                                               gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX),
                                               0, S32BIT);
   }
   idt[SOFTWARE_INTERRUPT_NUMBER] =
-    create_interrupt_gate_descriptor((uintptr_t) &interrupt_handler,
+    create_interrupt_gate_descriptor((uintptr_t) &asm_syscall_handler,
                                      gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX),
                                      3, S32BIT);
+  
+  idt[TIMER_INTERRUPT_NUMBER] =
+    create_interrupt_gate_descriptor((uintptr_t) &asm_timer_interrupt_handler,
+                                     gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX),
+                                     0, S32BIT);
+
+  idt[SPURIOUS_TIMER_INTERRUPT_NUMBER] =
+    create_interrupt_gate_descriptor((uintptr_t) &unimplemented_interrupt_handler,
+                                     gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX),
+                                     0, S32BIT);
+  
   struct idt_register {
     uint16_t limit; /* Maximum offset to access an entry in the GDT. */
     uint32_t base; } __attribute__((packed,aligned(8)));
@@ -326,6 +363,7 @@ hw_context_switch(struct hw_context* ctx){
   /* We will save the context in the context structure. */
   tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct pusha) + sizeof(struct interrupt_frame);
 
+  /* terminal_print("ds reg will be %x", ctx->iframe.ss); */
   load_ds_reg(ctx->iframe.ss);
   /* Load the context. */
   asm volatile
@@ -349,8 +387,9 @@ void hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
 #endif  
   ctx->iframe.eip = pc;
   ctx->iframe.cs = (gdt_segment_selector(3, START_USER_INDEX + 2 * idx));
-  /* Set only the reserved status flag, that should be set to 1. */
-  ctx->iframe.flags = 0x2;
+  /* Set only the reserved status flag, that should be set to 1; and
+     the interrupt enable flag. */
+  ctx->iframe.flags = (1 << 1) | (1 << 9);
 #ifdef DEBUG  
   ctx->iframe.esp = 0xacacacac;
 #endif
@@ -436,13 +475,13 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
     }
 
     lgdt(gdt,sizeof(segment_descriptor_t) * (FIXED_SIZE_GDT + 2 * user_tasks_image.nb_tasks));
-    //terminal_writestring("After lgdt\n");
+    /* terminal_writestring("After lgdt\n"); */
 
     load_code_segment(gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX));
-    //terminal_writestring("after load_cs\n");
+    /* terminal_writestring("after load_cs\n"); */
     
     load_data_segments(gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX));
-    //terminal_writestring("after load data segments\n");
+    /* terminal_writestring("after load data segments\n"); */
     
     load_tr(gdt_segment_selector(0,TSS_SEGMENTS_FIRST_INDEX));
   }
@@ -452,5 +491,7 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
 
   //terminal_writestring("Switching to userpsace\n");
 
+  timer_init();
+  
   high_level_init();
 }
