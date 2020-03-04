@@ -445,7 +445,7 @@ void __attribute__((fastcall,used))
 low_level_init(uint32_t magic_value, struct multiboot_information *mbi) 
 {
   /* Initialize terminal interface */
-  //terminal_initialize();
+  terminal_initialize();
 
   if(magic_value != 0x2BADB002)
     fatal("Not loaded by a multiboot loader");

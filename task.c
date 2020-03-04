@@ -43,15 +43,15 @@ test_userspace(void)  {
 
   /* puts(putchar, "Hello from user task " XSTRING(TASK_NUMBER) "\n"); */
   
-  //putchar('0' + TASK_NUMBER);
+  putchar('0' + TASK_NUMBER);
 
-  //printf(" Hello from task%d\n", TASK_NUMBER);
+  printf(" Hello from task%d\n", TASK_NUMBER);
   
   /* putchar('A' + TASK_NUMBER); */
   
   for(int i = 0; i < 3; i++){
     /* putchar('0' + TASK_NUMBER);     */
-    //printf("task" XSTRING(TASK_NUMBER) ": i=%d\n", i);
+    printf("task" XSTRING(TASK_NUMBER) ": i=%d\n", i);
     yield();
   }
   while(1);
