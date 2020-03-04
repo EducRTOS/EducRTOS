@@ -90,20 +90,38 @@ syscall2(uint32_t arg1, uint32_t arg2){
 
 #define NUM_CPUS 1
 
-enum gdt_indices {
- NULL_SEGMENT_INDEX,
- KERNEL_CODE_SEGMENT_INDEX,
- KERNEL_DATA_SEGMENT_INDEX,
- TSS_SEGMENTS_FIRST_INDEX,
- NEXT = TSS_SEGMENTS_FIRST_INDEX + NUM_CPUS,
- FIXED_SIZE_GDT,
- START_USER_INDEX = FIXED_SIZE_GDT, /* (code,data descriptors). */
+struct user_task_descriptors {
+  segment_descriptor_t code_descriptor;
+  segment_descriptor_t data_descriptor;  
+} __attribute__((packed));
+
+struct system_gdt {
+  segment_descriptor_t null_descriptor;
+  segment_descriptor_t kernel_code_descriptor;
+  segment_descriptor_t kernel_data_descriptor;
+  segment_descriptor_t tss_descriptor[NUM_CPUS];
+  struct user_task_descriptors user_task_descriptors[]; /* One per task */
+} __attribute__((packed));
+
+struct low_level_description {
+  struct system_gdt * const system_gdt;
 };
 
+#define KERNEL_CODE_SEGMENT_INDEX \
+  (offsetof(struct system_gdt,kernel_code_descriptor)/sizeof(segment_descriptor_t))
+#define KERNEL_DATA_SEGMENT_INDEX \
+  (offsetof(struct system_gdt,kernel_data_descriptor)/sizeof(segment_descriptor_t))
+#define TSS_SEGMENTS_FIRST_INDEX \
+  (offsetof(struct system_gdt,tss_descriptor)/sizeof(segment_descriptor_t))
+#define START_USER_INDEX \
+  (offsetof(struct system_gdt,user_task_descriptors)/sizeof(segment_descriptor_t))
+
+/* #define START_USER_INDEX (sizeof(struct system_gdt)/sizeof(segment_descriptor_t)) */
+
 #define LOW_LEVEL_SYSTEM_DESC(NB_TASKS)                                 \
-  segment_descriptor_t system_gdt[FIXED_SIZE_GDT + 2 * NB_TASKS];       \
+  struct { struct system_gdt begin; struct user_task_descriptors desc[NB_TASKS]; } __attribute__((packed)) system_gdt; \
   static const struct low_level_description low_level_description =     \
-      { .system_gdt = system_gdt };
+    { .system_gdt = (struct system_gdt *) &system_gdt };
 
 
 #endif /* __LOW_LEVEL_H__ */

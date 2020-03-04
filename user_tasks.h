@@ -28,11 +28,6 @@ struct task_description {
   char* const task_end;  
 };
 
-struct low_level_description {
-  segment_descriptor_t * const system_gdt;
-};
-
-
 /* High-level description of the application. */
 extern const struct user_tasks_image {
   unsigned int const nb_tasks;

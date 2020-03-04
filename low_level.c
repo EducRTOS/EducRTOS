@@ -398,12 +398,12 @@ void hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
   ctx->iframe.ss = (gdt_segment_selector(3, START_USER_INDEX + 2 * idx + 1));
 
   /* terminal_print("Init ctx is %x; ", ctx); */
-
-  segment_descriptor_t * const gdt = user_tasks_image.low_level.system_gdt;
+  
+  struct system_gdt * const gdt = user_tasks_image.low_level.system_gdt;
   /* terminal_print("gdt is  %x\n", gdt); */
-  gdt[START_USER_INDEX + 2 * idx] =
+  gdt->user_task_descriptors[idx].code_descriptor =
     create_code_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
-  gdt[START_USER_INDEX + 2 * idx + 1] =
+  gdt->user_task_descriptors[idx].data_descriptor =  
     create_data_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);  
 }
 
@@ -465,19 +465,19 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
   /* Up to now we used the segments loaded by grub. Set up a new gdt
      and make sure that the segments use it. */
   {
-    segment_descriptor_t *gdt = user_tasks_image.low_level.system_gdt;
-    gdt[NULL_SEGMENT_INDEX] = null_descriptor;
-    gdt[KERNEL_CODE_SEGMENT_INDEX] = kernel_code_descriptor;
-    gdt[KERNEL_DATA_SEGMENT_INDEX] = kernel_data_descriptor;
+    struct system_gdt *gdt = user_tasks_image.low_level.system_gdt;
+    gdt->null_descriptor = null_descriptor;
+    gdt->kernel_code_descriptor = kernel_code_descriptor;
+    gdt->kernel_data_descriptor = kernel_data_descriptor;
     /* Initialization of TSS. */
     for(int i = 0; i < NUM_CPUS; i++){
-      gdt[TSS_SEGMENTS_FIRST_INDEX + i] =
+      gdt->tss_descriptor[i] =
         create_tss_descriptor((uint32_t) &tss_array[i], sizeof(tss_array[i]), 3,0,0);
       tss_array[i].ss0 = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);
       tss_array[i].esp0 = (uint32_t) &kernel_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)];
     }
 
-    lgdt(gdt,sizeof(segment_descriptor_t) * (FIXED_SIZE_GDT + 2 * user_tasks_image.nb_tasks));
+    lgdt(gdt,sizeof(struct system_gdt) + user_tasks_image.nb_tasks * sizeof(struct user_task_descriptors));
     /* terminal_writestring("After lgdt\n"); */
 
     load_code_segment(gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX));
