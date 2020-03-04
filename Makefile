@@ -16,7 +16,6 @@ CFLAGS += -g 			          # Debug annotations.
 KERNEL_FILES = low_level.c high_level.c terminal.c lib/fprint.c pit_timer.c
 M32 ?= -m32
 
-APPLICATION_FILES = application_desc.c application.c # lib/fprint.c
 all: system.exe
 	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel system.exe 2>&1 | tee out | tail -n 500
 #	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel myos.exe -initrd task.bin 2>&1 | tee out | tail -n 500
