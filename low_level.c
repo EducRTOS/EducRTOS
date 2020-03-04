@@ -303,6 +303,8 @@ unimplemented_interrupt_handler2:               \n\
 
 
 
+void init_pic(void);
+void init_apic(void);
 
 void init_interrupts(void){
   init_pic();
