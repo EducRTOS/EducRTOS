@@ -100,8 +100,10 @@ enum gdt_indices {
  START_USER_INDEX = FIXED_SIZE_GDT, /* (code,data descriptors). */
 };
 
-#define LOW_LEVEL_SYSTEM_DESC(NB_TASKS)                                         \
-  segment_descriptor_t system_gdt[FIXED_SIZE_GDT + 2 * NB_TASKS];
+#define LOW_LEVEL_SYSTEM_DESC(NB_TASKS)                                 \
+  segment_descriptor_t system_gdt[FIXED_SIZE_GDT + 2 * NB_TASKS];       \
+  static const struct low_level_description low_level_description =     \
+      { .system_gdt = system_gdt };
 
 
 #endif /* __LOW_LEVEL_H__ */

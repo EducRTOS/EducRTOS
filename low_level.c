@@ -398,6 +398,7 @@ void hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
   /* terminal_print("Init ctx is %x; ", ctx); */
 
   segment_descriptor_t * const gdt = user_tasks_image.low_level.system_gdt;
+  /* terminal_print("gdt is  %x\n", gdt); */
   gdt[START_USER_INDEX + 2 * idx] =
     create_code_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
   gdt[START_USER_INDEX + 2 * idx + 1] =
