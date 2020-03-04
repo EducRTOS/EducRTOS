@@ -16,7 +16,10 @@ CFLAGS += -g 			          # Debug annotations.
 KERNEL_FILES = low_level.c high_level.c terminal.c lib/fprint.c pit_timer.c
 M32 ?= -m32
 
-all: system.exe
+all: system.exe system.objdump
+
+.PHONY: qemy
+qemu:
 	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel system.exe 2>&1 | tee out | tail -n 500
 #	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel myos.exe -initrd task.bin 2>&1 | tee out | tail -n 500
 
@@ -25,6 +28,8 @@ system.exe: $(KERNEL_FILES) system_desc.o
 	gcc $(M32) $(LD_FLAGS) -T kernel.ld -o $@ $(CFLAGS) $(KERNEL_FILES) system_desc.o -lgcc
 	if grub-file --is-x86-multiboot $@; then echo multiboot confirmed; else  echo the file is not multiboot; fi
 
+system.objdump: system.exe
+	objdump -M intel -D system.exe > system.objdump
 
 system_desc.o: task0.bin task1.bin task2.bin system_desc.c
 	gcc -c $(M32) $(CFLAGS) system_desc.c
