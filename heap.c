@@ -8,37 +8,40 @@
    - A function to get the priorities of an element (prefix_get_priority)
    - A function to compare the priorities (prefix_is_gt_priority) */
 
-#define INSTANTIATE_HEAP(prefix,NB_ELTS)                                \
+#define INSTANTIATE_HEAP(prefix)                                        \
                                                                         \
 prefix ## _priority_t prefix ## _get_priority(prefix ## _elt_id_t tid); \
 _Bool prefix ## _is_gt_priority(prefix ## _priority_t a, prefix ## _priority_t b); \
                                                                         \
+struct prefix ## _heap {                                                \
+  /* Number of elements currently in the heap. */                       \
+  unsigned int size;                                                    \
+  prefix ## _elt_id_t array[];                                          \
+};                                                                      \
                                                                         \
                                                                         \
-static prefix ## _elt_id_t elt_array[NB_ELTS];                          \
-static unsigned int elt_array_size = 0;                                 \
                                                                         \
-void insert_elt(prefix ## _elt_id_t elt){                               \
-  unsigned int i = elt_array_size++;                                    \
+void insert_elt(struct prefix ## _heap *heap, prefix ## _elt_id_t elt){ \
+  unsigned int i = heap->size++;                                        \
   prefix ## _priority_t priority = prefix ## _get_priority(elt);        \
   while(1){                                                             \
     if(i == 0) break;                 /* root */                        \
     unsigned int parent = (i - 1)/2;                                    \
-    if(prefix ## _is_gt_priority(priority,prefix ## _get_priority(elt_array[parent]))) { \
-      elt_array[i] = elt_array[parent];                                 \
+    if(prefix ## _is_gt_priority(priority,prefix ## _get_priority(heap->array[parent]))) { \
+      heap->array[i] = heap->array[parent];                             \
       i = parent;                                                       \
     }                                                                   \
     else break;                                                         \
   }                                                                     \
-  elt_array[i] = elt;                                                   \
+  heap->array[i] = elt;                                                 \
 }                                                                       \
                                                                         \
-prefix ## _elt_id_t remove_elt(void) {                                  \
-  prefix ## _elt_id_t res = elt_array[0];                               \
-  elt_array[0] = elt_array[--elt_array_size];                           \
+prefix ## _elt_id_t remove_elt(struct prefix ## _heap *heap) {          \
+  prefix ## _elt_id_t res = heap->array[0];                             \
+  heap->array[0] = heap->array[--heap->size];                           \
                                                                         \
   unsigned int i = 0;                                                   \
-  prefix ## _priority_t i_priority = prefix ## _get_priority(elt_array[i]); \
+  prefix ## _priority_t i_priority = prefix ## _get_priority(heap->array[i]); \
                                                                         \
   while(1){                                                             \
     unsigned int left = 2 * i + 1;                                      \
@@ -46,10 +49,10 @@ prefix ## _elt_id_t remove_elt(void) {                                  \
                                                                         \
     unsigned int largest = i;                                           \
     prefix ## _priority_t largest_priority = i_priority;                \
-    /* prefix ## _priority_t largest_priority = prefix ## _get_priority(elt_array[i]); */ \
+    /* prefix ## _priority_t largest_priority = prefix ## _get_priority(heap->array[i]); */ \
                                                                         \
-    if(right < elt_array_size){                                         \
-      prefix ## _priority_t right_priority = prefix ## _get_priority(elt_array[right]); \
+    if(right < heap->size){                                             \
+      prefix ## _priority_t right_priority = prefix ## _get_priority(heap->array[right]); \
       if (prefix ## _is_gt_priority(right_priority,largest_priority)){  \
         largest = right;                                                \
         largest_priority = right_priority;                              \
@@ -57,9 +60,9 @@ prefix ## _elt_id_t remove_elt(void) {                                  \
       /* As right is higher than left, we can skip the test. */         \
       goto skip;                                                        \
     }                                                                   \
-    if(left < elt_array_size){                                          \
+    if(left < heap->size){                                              \
     skip:;                                                              \
-      prefix ## _priority_t left_priority = prefix ## _get_priority(elt_array[left]); \
+      prefix ## _priority_t left_priority = prefix ## _get_priority(heap->array[left]); \
       if (prefix ## _is_gt_priority(left_priority,largest_priority)){   \
         largest = left;                                                 \
         largest_priority = left_priority;                               \
@@ -68,9 +71,9 @@ prefix ## _elt_id_t remove_elt(void) {                                  \
                                                                         \
     if(largest == i) return res;                                        \
     /* swap i and largest. */                                           \
-    prefix ## _elt_id_t tmp = elt_array[i];                             \
-    elt_array[i] = elt_array[largest];                                  \
-    elt_array[largest] = tmp;                                           \
+    prefix ## _elt_id_t tmp = heap->array[i];                           \
+    heap->array[i] = heap->array[largest];                              \
+    heap->array[largest] = tmp;                                         \
                                                                         \
     i = largest;                                                        \
   }                                                                     \
@@ -89,32 +92,40 @@ static inline _Bool test_is_gt_priority(test_priority_t a, test_priority_t b) {
   return a > b;
 }
 
-#define NB_ELTS 8
-INSTANTIATE_HEAP(test,NB_ELTS)
+INSTANTIATE_HEAP(test)
 
 #include <stdio.h>
 #include <assert.h>
 
+#define NB_ELTS 8  
+struct test_heap the_heap = {
+    .size = 0,
+    .array[NB_ELTS - 1] = 0,
+};
+
+int after_heap;
+struct test_heap *heap = &the_heap;
+  
 void check_is_a_heap(void){
-  for(unsigned int i = 0; i < elt_array_size; i++){
-    test_priority_t ip = test_get_priority(elt_array[i]);
+  for(unsigned int i = 0; i < heap->size; i++){
+    test_priority_t ip = test_get_priority(heap->array[i]);
     unsigned int left = 2 * i + 1;
     
-    if(left >= elt_array_size) break;
-    test_priority_t lp = test_get_priority(elt_array[left]);
+    if(left >= heap->size) break;
+    test_priority_t lp = test_get_priority(heap->array[left]);
     assert(!test_is_gt_priority(lp,ip));
     
     unsigned int right = 2 * i + 2;
-    if(right >= elt_array_size) break;    
-    test_priority_t rp = test_get_priority(elt_array[right]);
+    if(right >= heap->size) break;    
+    test_priority_t rp = test_get_priority(heap->array[right]);
     assert(!test_is_gt_priority(rp,ip));
   }
 }
 
 void print_elt_array(void){
   printf("|");
-  for(unsigned int i = 0; i < elt_array_size; i++){
-    printf("%d|", elt_array[i]);
+  for(unsigned int i = 0; i < heap->size; i++){
+    printf("%d|", heap->array[i]);
   }
   printf("\n");
 }
@@ -123,34 +134,35 @@ void print_elt_array(void){
 #include <assert.h>
 
 int main(void){
-  insert_elt(88);
+  print_elt_array();  
+  insert_elt(heap,88);
   print_elt_array();
   check_is_a_heap();
-  insert_elt(66);
+  insert_elt(heap,66);
   print_elt_array();
   check_is_a_heap();
-  insert_elt(44);
+  insert_elt(heap,44);
   print_elt_array();
   check_is_a_heap();  
-  insert_elt(77);
+  insert_elt(heap,77);
   print_elt_array();
   check_is_a_heap();  
-  insert_elt(11);
+  insert_elt(heap,11);
   print_elt_array();
   check_is_a_heap();  
-  insert_elt(55);
+  insert_elt(heap,55);
   print_elt_array();
   check_is_a_heap();
-  insert_elt(22);
+  insert_elt(heap,22);
   print_elt_array();
   check_is_a_heap();
-  insert_elt(33);
+  insert_elt(heap,33);
   print_elt_array();
   check_is_a_heap();
 
   int last = INT_MAX;
   for(int i = 0; i < NB_ELTS; i++){
-    int new = remove_elt();
+    int new = remove_elt(heap);
     printf("%d\n", new);
     print_elt_array();
     check_is_a_heap();
