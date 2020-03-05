@@ -65,7 +65,7 @@ static const uint16_t pit_data = 0x40;
 
 
 /* Time from the boot, in nano-seconds. */
-static uint64_t current_time;
+static _Atomic(uint64_t) current_time;
 
 void timer_init(void){
   current_time = 0;
