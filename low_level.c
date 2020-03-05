@@ -508,7 +508,6 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
       gdt->tss_descriptor[i] =
         create_tss_descriptor((uint32_t) &tss_array[i], sizeof(tss_array[i]), 3,0,0);
       tss_array[i].ss0 = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);
-      tss_array[i].esp0 = (uint32_t) &kernel_stack[KERNEL_STACK_SIZE - sizeof(uint32_t)];
     }
 
     lgdt(gdt,sizeof(struct system_gdt) + user_tasks_image.nb_tasks * sizeof(struct user_task_descriptors));
