@@ -355,6 +355,11 @@ void init_interrupts(void){
 
 /****************  ****************/
 
+#ifdef FIXED_SIZE_GDT
+struct system_gdt system_gdt;
+#endif
+
+
 void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx){
   /* terminal_print("Switching to %x\n", ctx); */
@@ -366,9 +371,8 @@ hw_context_switch(struct hw_context* ctx){
   tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct pusha) + sizeof(struct interrupt_frame);
 
 #ifdef FIXED_SIZE_GDT
-  struct system_gdt * const gdt = user_tasks_image.low_level.system_gdt;
-  gdt->user_code_descriptor = ctx->code_segment;
-  gdt->user_data_descriptor = ctx->data_segment;  
+  system_gdt.user_code_descriptor = ctx->code_segment;
+  system_gdt.user_data_descriptor = ctx->data_segment;  
 #endif  
 
   
@@ -414,9 +418,6 @@ void hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
   ctx->iframe.ss = (gdt_segment_selector(3, DATA_INDEX));
 
   /* terminal_print("Init ctx is %x; ", ctx); */
-  
-  struct system_gdt * const gdt = user_tasks_image.low_level.system_gdt;
-  /* terminal_print("gdt is  %x\n", gdt); */
 
 #ifdef FIXED_SIZE_GDT
   ctx->code_segment =
@@ -424,6 +425,8 @@ void hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
   ctx->data_segment =
     create_data_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
 #else
+  struct system_gdt * const gdt = user_tasks_image.low_level.system_gdt;
+  /* terminal_print("gdt is  %x\n", gdt);   */
   gdt->user_task_descriptors[idx].code_descriptor =
     create_code_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
   gdt->user_task_descriptors[idx].data_descriptor =
@@ -491,7 +494,12 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
   /* Up to now we used the segments loaded by grub. Set up a new gdt
      and make sure that the segments use it. */
   {
-    struct system_gdt *gdt = user_tasks_image.low_level.system_gdt;
+    struct system_gdt *gdt =
+#ifdef FIXED_SIZE_GDT
+      &system_gdt;
+#else      
+      user_tasks_image.low_level.system_gdt;
+#endif 
     gdt->null_descriptor = null_descriptor;
     gdt->kernel_code_descriptor = kernel_code_descriptor;
     gdt->kernel_data_descriptor = kernel_data_descriptor;

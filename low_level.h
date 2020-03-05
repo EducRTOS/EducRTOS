@@ -113,7 +113,9 @@ struct system_gdt {
 } __attribute__((packed));
 
 struct low_level_description {
+#ifndef FIXED_SIZE_GDT  
   struct system_gdt * const system_gdt;
+#endif
 };
 
 #define KERNEL_CODE_SEGMENT_INDEX \
@@ -139,17 +141,19 @@ struct low_level_description {
 
 #ifdef FIXED_SIZE_GDT
 #define SYSTEM_GDT(NB_TASKS) struct system_gdt system_gdt;
+#define SYSTEM_GDT_FIELD 
 #else
 #define SYSTEM_GDT(NB_TASKS)                                            \
   struct {                                                              \
   struct system_gdt begin;                                              \
   struct user_task_descriptors desc[NB_TASKS]; } __attribute__((packed)) system_gdt;
+#define SYSTEM_GDT_FIELD .system_gdt = (struct system_gdt *) &system_gdt,
 #endif
 
 
 #define LOW_LEVEL_SYSTEM_DESC(NB_TASKS)                                 \
   SYSTEM_GDT(NB_TASKS);                                                 \
   static const struct low_level_description low_level_description =     \
-    { .system_gdt = (struct system_gdt *) &system_gdt };
+    { SYSTEM_GDT_FIELD };
 
 #endif /* __LOW_LEVEL_H__ */
