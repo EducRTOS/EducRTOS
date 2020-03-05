@@ -51,5 +51,5 @@ static const struct task_description tasks[] = {
 const struct user_tasks_image user_tasks_image = {
   .nb_tasks = 2,
   .tasks = tasks,
-  .low_level = low_level_description,
+  .low_level = {}/* low_level_description */,
 };
