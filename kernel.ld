@@ -61,8 +61,8 @@ SECTIONS
 
         /* Note: does not  work if we put it in a separate section because 
         then the compiler does not know that the section is loadable. */
-        }
-        .user_tasks BLOCK(4K) : ALIGN(4K){
+        /* } */
+        /* .user_tasks BLOCK(4K) : ALIGN(4K){ */
                _start_of_user_tasks = .;
                system_desc.o(.data.task)
         _end_of_parametrized_region = .;                               
