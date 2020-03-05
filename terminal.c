@@ -68,12 +68,12 @@ void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
 
 void terminal_newline(void){
   terminal_column = 0;
-  if (++terminal_row == VGA_HEIGHT){
-    for(unsigned int y = 0; y < VGA_HEIGHT; y++)
-      for(unsigned int x = 0; x < VGA_WIDTH; x++){
-	const size_t index = y * VGA_WIDTH + x;
-        terminal_buffer[index] = vga_entry(' ', terminal_color);
-      }
+  if (++terminal_row >= VGA_HEIGHT){
+    /* for(unsigned int y = 0; y < VGA_HEIGHT; y++) */
+    /*   for(unsigned int x = 0; x < VGA_WIDTH; x++){ */
+    /*     const size_t index = y * VGA_WIDTH + x; */
+    /*     terminal_buffer[index] = vga_entry(' ', terminal_color); */
+    /*   } */
     terminal_row = 0;
   }
 }
@@ -87,7 +87,7 @@ void terminal_putchar(unsigned char c)
      
   default:
     terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
-    if (++terminal_column == VGA_WIDTH) {
+    if (++terminal_column >= VGA_WIDTH) {
       terminal_newline();
     }
     break;
