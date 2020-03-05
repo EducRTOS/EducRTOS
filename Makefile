@@ -1,3 +1,6 @@
+CC=gcc
+#CC=clang
+
 QEMU_OPTIONS= -d in_asm,int,cpu_reset,pcall,cpu -no-reboot -no-shutdown
 
 QEMU_OPTIONS += -machine q35 # More recent hardware.
@@ -25,22 +28,22 @@ qemu:   system.exe
 
 # Compiles everything together in a single system
 system.exe: $(KERNEL_FILES) system_desc.o
-	gcc $(M32) $(LD_FLAGS) -T kernel.ld -o $@ $(CFLAGS) $(KERNEL_FILES) system_desc.o -lgcc
+	$(CC) $(M32) $(LD_FLAGS) -Wl,-Tkernel.ld -o $@ $(CFLAGS) $(KERNEL_FILES) system_desc.o -lgcc
 	if grub-file --is-x86-multiboot $@; then echo multiboot confirmed; else  echo the file is not multiboot; fi
 
 system.objdump: system.exe
 	objdump -M intel -D system.exe > system.objdump
 
 system_desc.o: task0.bin task1.bin task2.bin system_desc.c
-	gcc -c $(M32) $(CFLAGS) -fno-common system_desc.c
+	$(CC) -c $(M32) $(CFLAGS) -fno-common system_desc.c
 # Note: we use -fno-common to force allocation of initialized data at the right place.
 
 task0.exe: task.c lib/fprint.c user_task.ld
-	gcc $(M32) $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=0 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+	$(CC) $(M32) $(LD_FLAGS) -Wl,-Tuser_task.ld -DTASK_NUMBER=0 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
 task1.exe: task.c lib/fprint.c user_task.ld
-	gcc $(M32) $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=1 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+	$(CC) $(M32) $(LD_FLAGS) -Wl,-Tuser_task.ld -DTASK_NUMBER=1 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
 task2.exe: task.c lib/fprint.c user_task.ld
-	gcc $(M32) $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=2 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
+	$(CC) $(M32) $(LD_FLAGS) -Wl,-Tuser_task.ld -DTASK_NUMBER=2 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc
 
 %.bin: %.exe
 	objcopy -Obinary -j.all $*.exe $*.bin
