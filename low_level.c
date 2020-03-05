@@ -6,6 +6,7 @@
 #include "segment.h"
 #include "low_level.h"
 #include "high_level.h"
+#include "config.h"
 
 /* As Qemu can dump the state before each basic block, the following
    fake jump is useful to debug assembly code.  */
@@ -121,7 +122,6 @@ struct tss
 
 /* TSS for the processors. */
 
-#define NUM_CPUS 1
 #define current_cpu() 0
 static struct tss tss_array[NUM_CPUS];
 
