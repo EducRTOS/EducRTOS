@@ -5,6 +5,8 @@
 #error "NB_TASKS should be defined"
 #endif
 
+#include "config.h"
+
 LOW_LEVEL_SYSTEM_DESC(NB_TASKS);
 HIGH_LEVEL_SYSTEM_DESC(NB_TASKS);
 

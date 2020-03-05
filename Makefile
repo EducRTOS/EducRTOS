@@ -32,7 +32,8 @@ system.objdump: system.exe
 	objdump -M intel -D system.exe > system.objdump
 
 system_desc.o: task0.bin task1.bin task2.bin system_desc.c
-	gcc -c $(M32) $(CFLAGS) system_desc.c
+	gcc -c $(M32) $(CFLAGS) -fno-common system_desc.c
+# Note: we use -fno-common to force allocation of initialized data at the right place.
 
 task0.exe: task.c lib/fprint.c user_task.ld
 	gcc $(M32) $(LD_FLAGS) -T user_task.ld -DTASK_NUMBER=0 -o $@ $(CFLAGS) task.c lib/fprint.c -lgcc

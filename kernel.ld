@@ -1,7 +1,23 @@
 /* The bootloader will look at this image and start execution at the symbol
    designated as the entry point. */
 ENTRY(_start)
- 
+
+/* TODO: check if this removes the need  */
+/* FORCE_COMMON_ALLOCATION */
+
+/* Assigning sections to segment is not sufficient to put user tasks in a separate section. */
+/* PHDRS */
+/* { */
+/*        headers PT_PHDR PHDRS ; */
+/*        interp PT_INTERP ; */
+/*        text PT_LOAD FILEHDR PHDRS ; */
+/*        data PT_LOAD ; */
+/*        dynamic PT_DYNAMIC; */
+/* } */
+
+/* Note: the alignments are not necessary, but alignment of user
+   segments would be useful if we want to use big segments. */
+
 /* Tell where the various sections of the object files will be put in the final
    kernel image. */
 SECTIONS
@@ -15,31 +31,46 @@ SECTIONS
 	   Next we'll put the .text section. */
 	.text BLOCK(4K) : ALIGN(4K)
 	{
-		*(.multiboot)
-		*(.text)
-                *(.text.*)        
+		EXCLUDE_FILE(system_desc.o) *(.multiboot .text .text.*)
 	}
  
 	/* Read-only data. */
 	.rodata BLOCK(4K) : ALIGN(4K)
 	{
-		*(.rodata)
-                *(.rodata.*)
+		EXCLUDE_FILE(system_desc.o) *(.rodata .rodata.*)
 	}
  
 	/* Read-write data (initialized) */
 	.data BLOCK(4K) : ALIGN(4K)
 	{
-		*(.data)
+		EXCLUDE_FILE(system_desc.o) *(.data)
 	}
  
 	/* Read-write data (uninitialized) and stack */
 	.bss BLOCK(4K) : ALIGN(4K)
 	{
-		*(COMMON)
-		*(.bss)
+		EXCLUDE_FILE(system_desc.o) *(COMMON .bss)
 	}
- 
+
+        _end_of_fixed_region = .;
+        _begin_of_parametrized_region = .;
+
+        .user_tasks_kernel_data BLOCK(4K) : ALIGN(4K){
+               system_desc.o(.rodata .rodata.* .data COMMON .bss)
+        _end_of_kernel = .;
+
+        /* Note: does not  work if we put it in a separate section because 
+        then the compiler does not know that the section is loadable. */
+        }
+        .user_tasks BLOCK(4K) : ALIGN(4K){
+               _start_of_user_tasks = .;
+               system_desc.o(.data.task)
+        _end_of_parametrized_region = .;                               
+         }
+
+
+
+
 	/* The compiler may produce other sections, by default it will put them in
 	   a segment with the same name. Simply add stuff here as needed. */
 }

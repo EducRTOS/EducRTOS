@@ -4,7 +4,7 @@
 #define XSTRING(x) STRING(x)
 
 #define INCBIN(name, file) \
-    asm(".section .rodata\n" \
+    asm(".section .data.task\n" \
             ".global " XSTRING(name) "_begin\n" \
             ".type " XSTRING(name) "_begin, @object\n" \
             ".balign 16\n" \
