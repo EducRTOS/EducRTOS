@@ -29,47 +29,30 @@ SECTIONS
 	/* First put the multiboot header, as it is required to be put very early
 	   early in the image or the bootloader won't recognize the file format.
 	   Next we'll put the .text section. */
-	.text BLOCK(4K) : ALIGN(4K)
+	.all :
 	{
+          /* Code */
 		EXCLUDE_FILE(system_desc.o) *(.multiboot .text .text.*)
-	}
- 
-	/* Read-only data. */
-	.rodata BLOCK(4K) : ALIGN(4K)
-	{
+  	  /* Read-only data. */
 		EXCLUDE_FILE(system_desc.o) *(.rodata .rodata.*)
-	}
- 
-	/* Read-write data (initialized) */
-	.data BLOCK(4K) : ALIGN(4K)
-	{
+          /* Read-write data (initialized) */
 		EXCLUDE_FILE(system_desc.o) *(.data)
-	}
- 
-	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : ALIGN(4K)
-	{
+          /* Read-write data (non-initialized) */                
 		EXCLUDE_FILE(system_desc.o) *(COMMON .bss)
-	}
-
         _end_of_fixed_region = .;
-        _begin_of_parametrized_region = .;
 
-        .user_tasks_kernel_data BLOCK(4K) : ALIGN(4K){
+        /* . = ALIGN(ABSOLUTE(.),4096); */
+
+        _begin_of_parametrized_region = .;
                system_desc.o(.rodata .rodata.* .data COMMON .bss)
         _end_of_kernel = .;
 
-        /* Note: does not  work if we put it in a separate section because 
-        then the compiler does not know that the section is loadable. */
-        /* } */
-        /* .user_tasks BLOCK(4K) : ALIGN(4K){ */
-               _start_of_user_tasks = .;
+
+
+        _start_of_user_tasks = .;
                system_desc.o(.data.task)
         _end_of_parametrized_region = .;                               
          }
-
-
-
 
 	/* The compiler may produce other sections, by default it will put them in
 	   a segment with the same name. Simply add stuff here as needed. */
