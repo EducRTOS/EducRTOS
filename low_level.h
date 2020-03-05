@@ -3,6 +3,7 @@
 #ifndef __LOW_LEVEL_H__
 #define __LOW_LEVEL_H__
 
+#include "config.h"
 #include <stdint.h>
 
 /* These types should not be manipulated directly, but the high-level
@@ -37,10 +38,12 @@ struct hw_context {
   /* The hardware context is restored with popa;iret. */
   struct pusha           regs;
   struct interrupt_frame iframe;
+#ifdef FIXED_SIZE_GDT  
   /* Segment selectors are initialized once. They point to the same
      address range, but code and segment are different. */
   segment_descriptor_t code_segment;
   segment_descriptor_t data_segment;
+#endif  
 } __attribute__((packed,aligned(4)));
 
 
@@ -99,8 +102,14 @@ struct system_gdt {
   segment_descriptor_t null_descriptor;
   segment_descriptor_t kernel_code_descriptor;
   segment_descriptor_t kernel_data_descriptor;
+#ifdef FIXED_SIZE_GDT
+  segment_descriptor_t user_code_descriptor;
+  segment_descriptor_t user_data_descriptor;
+#endif  
   segment_descriptor_t tss_descriptor[NUM_CPUS];
+#ifndef FIXED_SIZE_GDT  
   struct user_task_descriptors user_task_descriptors[]; /* One per task */
+#endif  
 } __attribute__((packed));
 
 struct low_level_description {
@@ -113,15 +122,34 @@ struct low_level_description {
   (offsetof(struct system_gdt,kernel_data_descriptor)/sizeof(segment_descriptor_t))
 #define TSS_SEGMENTS_FIRST_INDEX \
   (offsetof(struct system_gdt,tss_descriptor)/sizeof(segment_descriptor_t))
+#ifndef FIXED_SIZE_GDT
 #define START_USER_INDEX \
   (offsetof(struct system_gdt,user_task_descriptors)/sizeof(segment_descriptor_t))
+#else
+#define USER_CODE_SEGMENT_INDEX \
+  (offsetof(struct system_gdt,user_code_descriptor)/sizeof(segment_descriptor_t))
+#define USER_DATA_SEGMENT_INDEX \
+  (offsetof(struct system_gdt,user_data_descriptor)/sizeof(segment_descriptor_t))
+#endif
+
+
 
 /* #define START_USER_INDEX (sizeof(struct system_gdt)/sizeof(segment_descriptor_t)) */
 
+
+#ifdef FIXED_SIZE_GDT
+#define SYSTEM_GDT(NB_TASKS) struct system_gdt system_gdt;
+#else
+#define SYSTEM_GDT(NB_TASKS)                                            \
+  struct {                                                              \
+  struct system_gdt begin;                                              \
+  struct user_task_descriptors desc[NB_TASKS]; } __attribute__((packed)) system_gdt;
+#endif
+
+
 #define LOW_LEVEL_SYSTEM_DESC(NB_TASKS)                                 \
-  struct { struct system_gdt begin; struct user_task_descriptors desc[NB_TASKS]; } __attribute__((packed)) system_gdt; \
+  SYSTEM_GDT(NB_TASKS);                                                 \
   static const struct low_level_description low_level_description =     \
     { .system_gdt = (struct system_gdt *) &system_gdt };
-
 
 #endif /* __LOW_LEVEL_H__ */

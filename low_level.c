@@ -365,6 +365,13 @@ hw_context_switch(struct hw_context* ctx){
   /* We will save the context in the context structure. */
   tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct pusha) + sizeof(struct interrupt_frame);
 
+#ifdef FIXED_SIZE_GDT
+  struct system_gdt * const gdt = user_tasks_image.low_level.system_gdt;
+  gdt->user_code_descriptor = ctx->code_segment;
+  gdt->user_data_descriptor = ctx->data_segment;  
+#endif  
+
+  
   /* terminal_print("ds reg will be %x", ctx->iframe.ss); */
   load_ds_reg(ctx->iframe.ss);
   /* Load the context. */
@@ -386,25 +393,44 @@ void hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
   ctx->regs.ebp = 0x99999999;        
   ctx->regs.esi = 0x88888888;
   ctx->regs.edi = 0x77777777;
+#endif
+
+#ifdef FIXED_SIZE_GDT
+#define CODE_INDEX USER_CODE_SEGMENT_INDEX
+#define DATA_INDEX USER_DATA_SEGMENT_INDEX    
+#else
+#define CODE_INDEX (START_USER_INDEX + 2 * idx)
+#define DATA_INDEX (START_USER_INDEX + 2 * idx + 1)
 #endif  
+  
   ctx->iframe.eip = pc;
-  ctx->iframe.cs = (gdt_segment_selector(3, START_USER_INDEX + 2 * idx));
+  ctx->iframe.cs = (gdt_segment_selector(3, CODE_INDEX));
   /* Set only the reserved status flag, that should be set to 1; and
      the interrupt enable flag. */
   ctx->iframe.flags = (1 << 1) | (1 << 9);
 #ifdef DEBUG  
   ctx->iframe.esp = 0xacacacac;
 #endif
-  ctx->iframe.ss = (gdt_segment_selector(3, START_USER_INDEX + 2 * idx + 1));
+  ctx->iframe.ss = (gdt_segment_selector(3, DATA_INDEX));
 
   /* terminal_print("Init ctx is %x; ", ctx); */
   
   struct system_gdt * const gdt = user_tasks_image.low_level.system_gdt;
   /* terminal_print("gdt is  %x\n", gdt); */
+
+#ifdef FIXED_SIZE_GDT
+  ctx->code_segment =
+    create_code_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
+  ctx->data_segment =
+    create_data_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
+#else
   gdt->user_task_descriptors[idx].code_descriptor =
     create_code_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
-  gdt->user_task_descriptors[idx].data_descriptor =  
+  gdt->user_task_descriptors[idx].data_descriptor =
     create_data_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);  
+#endif  
+
+
 }
 
 struct module_information {
