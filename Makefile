@@ -18,8 +18,8 @@ M32 ?= -m32
 
 all: system.exe system.objdump
 
-.PHONY: qemy
-qemu:
+.PHONY: qemu
+qemu:   system.exe
 	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel system.exe 2>&1 | tee out | tail -n 500
 #	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel myos.exe -initrd task.bin 2>&1 | tee out | tail -n 500
 
