@@ -35,7 +35,8 @@ extern const struct user_tasks_image {
   unsigned int const nb_tasks;
   struct task_description const *const tasks;
   struct low_level_description const low_level;
-  
+  struct context ** const ready_heap_array;
+  struct context ** const waiting_heap_array;  
 } user_tasks_image;
 
 /* Provided by the application */

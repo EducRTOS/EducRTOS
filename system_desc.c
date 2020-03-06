@@ -50,8 +50,14 @@ static const struct task_description tasks[] = {
   },
 };
 
+
+static struct context *ready_heap_array[NB_TASKS];
+static struct context *waiting_heap_array[NB_TASKS];
+  
 const struct user_tasks_image user_tasks_image = {
   .nb_tasks = 2,
   .tasks = tasks,
   .low_level = {}/* low_level_description */,
+  .ready_heap_array = &ready_heap_array,
+  .waiting_heap_array = &waiting_heap_array,  
 };
