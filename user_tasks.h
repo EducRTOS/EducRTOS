@@ -2,6 +2,7 @@
 #define __USER_TASKS_H__
 
 #include "low_level.h"
+#include "timer.h"
 
 enum syscalls {
    SYSCALL_YIELD = 0x11,
@@ -25,7 +26,8 @@ struct task_description {
   struct context * const context;
   uint32_t const start_pc;
   char* const task_begin;
-  char* const task_end;  
+  char* const task_end;
+  duration_t period;
 };
 
 /* High-level description of the application. */
