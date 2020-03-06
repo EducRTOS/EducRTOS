@@ -16,7 +16,7 @@ _Bool prefix ## _is_gt_priority(prefix ## _priority_t a, prefix ## _priority_t b
 struct prefix ## _heap {                                                \
   /* Number of elements currently in the heap. */                       \
   unsigned int size;                                                    \
-  prefix ## _elt_id_t array[];                                          \
+  prefix ## _elt_id_t * const array;                                    \
 };                                                                      \
                                                                         \
                                                                         \
@@ -97,10 +97,13 @@ INSTANTIATE_HEAP(test)
 #include <stdio.h>
 #include <assert.h>
 
-#define NB_ELTS 8  
+#define NB_ELTS 8
+
+int the_heap_array[NB_ELTS];
+  
 struct test_heap the_heap = {
     .size = 0,
-    .array[NB_ELTS - 1] = 0,
+    .array = &the_heap_array[0],
 };
 
 int after_heap;
