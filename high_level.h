@@ -1,7 +1,10 @@
 #ifndef __HIGH_LEVEL_H__
 #define __HIGH_LEVEL_H__
 
+#include "config.h"
+#include "scheduler.h"
 #include "low_level.h"
+
 
 /* High-level: parts of the kernel which are independent from the
    hardware architecture. */
@@ -9,7 +12,8 @@
 struct context {
   struct hw_context hw_context;
   /* Round-robin scheduling. */
-  struct context *next;
+  /* struct context *next; */
+  struct scheduling_context sched_context;
 };
 
 _Static_assert(__builtin_offsetof(struct context,hw_context) == 0);

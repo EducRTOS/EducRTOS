@@ -6,4 +6,6 @@
 #define FIXED_SIZE_GDT
 #define NUM_CPUS 1
 
+#define ROUND_ROBIN_SCHEDULING
+
 #endif

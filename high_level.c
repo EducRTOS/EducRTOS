@@ -14,7 +14,8 @@ high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number, int arg1){
   /* terminal_print("Calling interrupt %x\n", cur_hw_ctx); */
   switch(syscall_number){
   case SYSCALL_YIELD:
-    hw_context_switch(&cur_ctx->next->hw_context);
+    cur_ctx = sched_choose_from(cur_ctx);
+    /* hw_context_switch(&cur_ctx->next->hw_context); */
     break;
   case SYSCALL_PUTCHAR:
     terminal_putchar(arg1);
@@ -39,7 +40,9 @@ void context_init(struct context * const ctx, int idx,
                   uint32_t start, uint32_t end,
                   struct context * const prev){
   hw_context_init(&ctx->hw_context, idx, pc, start, end);
-  prev->next = ctx;
+#ifdef ROUND_ROBIN_SCHEDULING  
+  prev->sched_context.next = ctx;
+#endif  
 }
 
 void __attribute__((noreturn))
