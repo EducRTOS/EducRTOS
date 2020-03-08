@@ -89,6 +89,20 @@ syscall2(uint32_t arg1, uint32_t arg2){
 }
 
 
+static inline void
+syscall5(uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5){
+  asm volatile ("int %0": :
+                "i"(SOFTWARE_INTERRUPT_NUMBER),
+                "d"(arg1),
+                "c"(arg2),
+                "b"(arg3),
+                "S"(arg4),
+                "D"(arg5)                
+                );
+}
+
+
+
 /**************** For use by system description. ****************/
 
 #define NUM_CPUS 1

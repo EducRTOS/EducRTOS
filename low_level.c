@@ -180,6 +180,9 @@ static const segment_descriptor_t kernel_data_descriptor = create_data_descripto
 #define _KERNEL_DATA_SEGMENT_INDEX   2
 _Static_assert(_KERNEL_DATA_SEGMENT_INDEX == KERNEL_DATA_SEGMENT_INDEX);
 
+#define _SYSCALL_NUMBER 2
+_Static_assert(_SYSCALL_NUMBER == SYSCALL_NUMBER);
+
 /* Address of the gdt, and size in bytes. */
 static inline void lgdt(segment_descriptor_t *gdt, int size)
 {
@@ -222,8 +225,9 @@ asm_syscall_handler:\n\
         movw %ax, %ds\n\
         mov %esp, %eax\n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
-        /* Note: must use the regparm3 calling ABI */\n\
-	call high_level_syscall\n\
+        cmp " XSTRING(_SYSCALL_NUMBER) ", %edx\n           \
+        ja error_infinite_loop\n\
+        jmp *syscall_array(,%edx,4)\n\
         jmp error_infinite_loop\n\
 .size asm_syscall_handler, . - asm_syscall_handler\n\
 ");

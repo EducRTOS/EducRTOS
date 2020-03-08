@@ -41,6 +41,8 @@ user_error_infinite_loop:\n\
 void __attribute__((used))
 test_userspace(void)  {
 
+  yield(0x1122334455667788ULL,0xaabbccddeeff0011ULL);
+  
   /* puts(putchar, "Hello from user task " XSTRING(TASK_NUMBER) "\n"); */
   
   putchar('0' + TASK_NUMBER);
@@ -52,7 +54,7 @@ test_userspace(void)  {
   for(int i = 0; i < 3; i++){
     /* putchar('0' + TASK_NUMBER);     */
     printf("task" XSTRING(TASK_NUMBER) ": i=%d\n", i);
-    yield();
+    yield(1000000000ULL,2000000000ULL);
   }
   while(1);
 }

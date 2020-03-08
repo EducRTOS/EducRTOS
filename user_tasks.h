@@ -5,14 +5,21 @@
 #include "timer.h"
 
 enum syscalls {
-   SYSCALL_YIELD = 0x11,
-   SYSCALL_PUTCHAR = 0x22,
+   SYSCALL_YIELD,
+   SYSCALL_PUTCHAR,
+   SYSCALL_NUMBER
    /* SYSCALL_SLEEP = 0x33 */
 };
 
 static inline void
-yield(void){
-  syscall1(SYSCALL_YIELD);
+yield(duration_t next_wakeup, duration_t next_deadline){
+  uint32_t next_wakeup_high = (uint32_t) (next_wakeup >> 32ULL);
+  uint32_t next_wakeup_low = (uint32_t) (next_wakeup & 0xFFFFFFFFULL);  
+
+  uint32_t next_deadline_high = (uint32_t) (next_deadline >> 32ULL);
+  uint32_t next_deadline_low = (uint32_t) (next_deadline & 0xFFFFFFFFULL);  
+
+  syscall5(SYSCALL_YIELD, next_wakeup_high, next_wakeup_low, next_deadline_high, next_deadline_low);
 }
 
 static inline void putchar(unsigned char x){

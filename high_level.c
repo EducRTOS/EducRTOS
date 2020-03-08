@@ -6,8 +6,28 @@
 /* This works because hw_context must be the first field of a context. */
 _Static_assert(__builtin_offsetof(struct context,hw_context) == 0);
 
+
+/* Prepare the arguments for the call. This prologue will be the same
+   for all functions that take 6 arguments. */
+extern void syscall_yield(void);
+asm("\
+.global syscall_yield\n\t\
+.type syscall_yield, @function\n\
+syscall_yield:\n\
+        push %edi\n\
+        push %esi\n\
+        push %ebx\n\
+        call c_syscall_yield\n\
+.size syscall_yield, . - syscall_yield\n\
+");
+
+
 void __attribute__((regparm(3),noreturn,used)) 
-syscall_yield(struct context *ctx, int syscall_number) {
+c_syscall_yield(struct context *ctx, int syscall_number,
+                uint32_t next_wakeup_high, uint32_t next_wakeup_low,
+                uint32_t next_deadline_high, uint32_t next_deadline_low){
+  terminal_print("%d|%x %x %x %x\n", syscall_number, next_wakeup_high, next_wakeup_low,
+         next_deadline_high, next_deadline_low);
   struct context *new_ctx  = sched_choose_from(ctx);
   hw_context_switch(&new_ctx->hw_context);
 }
@@ -18,27 +38,10 @@ syscall_putchar(struct context *ctx, int syscall_number, int arg1) {
   hw_context_switch(&ctx->hw_context);
 }
 
-  
-void __attribute__((regparm(3),noreturn,used))
-high_level_syscall(struct hw_context *cur_hw_ctx, int syscall_number, int arg1){
-
-
-  struct context *cur_ctx = (struct context *) cur_hw_ctx;
-
-  /* terminal_print("ctx %x syscall number %x", cur_ctx, syscall_number); */
-  /* terminal_print("Calling interrupt %x\n", syscall_number); */
-  /* terminal_print("Calling interrupt %x\n", arg1); */
-  /* terminal_print("Calling interrupt %x\n", cur_hw_ctx); */
-  switch(syscall_number){
-  case SYSCALL_YIELD:
-    syscall_yield(cur_ctx, syscall_number);
-    break;
-  case SYSCALL_PUTCHAR:
-    syscall_putchar(cur_ctx, syscall_number, arg1);
-    break;
-  }
-  fatal("Unknown syscall\n");
-}
+void * const syscall_array[SYSCALL_NUMBER] __attribute__((used)) = {
+  [SYSCALL_YIELD] = syscall_yield,
+  [SYSCALL_PUTCHAR] = syscall_putchar,
+};
 
 void __attribute__((noreturn,used))
 high_level_timer_interrupt_handler(struct hw_context *cur_hw_ctx){
