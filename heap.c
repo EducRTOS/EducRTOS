@@ -6,7 +6,7 @@
      involve more copies).
    - A prefix_priority_t type (e.g. an int).
    - A function to get the priorities of an element (prefix_get_priority)
-   - A function to compare the priorities (prefix_is_gt_priority) */
+   - A function to compare the priorities (prefix_is_gt_priority): > for max_heap, < for min_heap. */
 
 #define INSTANTIATE_HEAP(prefix)                                        \
                                                                         \
@@ -16,12 +16,12 @@ _Bool prefix ## _is_gt_priority(prefix ## _priority_t a, prefix ## _priority_t b
 struct prefix ## _heap {                                                \
   /* Number of elements currently in the heap. */                       \
   unsigned int size;                                                    \
-  prefix ## _elt_id_t * const array;                                    \
+  prefix ## _elt_id_t *  array;                                    \
 };                                                                      \
                                                                         \
                                                                         \
                                                                         \
-void insert_elt(struct prefix ## _heap *heap, prefix ## _elt_id_t elt){ \
+void prefix ## _insert_elt(struct prefix ## _heap *heap, prefix ## _elt_id_t elt){ \
   unsigned int i = heap->size++;                                        \
   prefix ## _priority_t priority = prefix ## _get_priority(elt);        \
   while(1){                                                             \
@@ -36,7 +36,7 @@ void insert_elt(struct prefix ## _heap *heap, prefix ## _elt_id_t elt){ \
   heap->array[i] = elt;                                                 \
 }                                                                       \
                                                                         \
-prefix ## _elt_id_t remove_elt(struct prefix ## _heap *heap) {          \
+prefix ## _elt_id_t prefix ## _remove_elt(struct prefix ## _heap *heap) {\
   prefix ## _elt_id_t res = heap->array[0];                             \
   heap->array[0] = heap->array[--heap->size];                           \
                                                                         \
@@ -81,7 +81,7 @@ prefix ## _elt_id_t remove_elt(struct prefix ## _heap *heap) {          \
 
 
 
-#if 1
+#if 0
 /* Unit test and example of instantiation. */
 
 /* An instance of the heap. */
@@ -138,34 +138,34 @@ void print_elt_array(void){
 
 int main(void){
   print_elt_array();  
-  insert_elt(heap,88);
+  test_insert_elt(heap,88);
   print_elt_array();
   check_is_a_heap();
-  insert_elt(heap,66);
+  test_insert_elt(heap,66);
   print_elt_array();
   check_is_a_heap();
-  insert_elt(heap,44);
+  test_insert_elt(heap,44);
   print_elt_array();
   check_is_a_heap();  
-  insert_elt(heap,77);
+  test_insert_elt(heap,77);
   print_elt_array();
   check_is_a_heap();  
-  insert_elt(heap,11);
+  test_insert_elt(heap,11);
   print_elt_array();
   check_is_a_heap();  
-  insert_elt(heap,55);
+  test_insert_elt(heap,55);
   print_elt_array();
   check_is_a_heap();
-  insert_elt(heap,22);
+  test_insert_elt(heap,22);
   print_elt_array();
   check_is_a_heap();
-  insert_elt(heap,33);
+  test_insert_elt(heap,33);
   print_elt_array();
   check_is_a_heap();
 
   int last = INT_MAX;
   for(int i = 0; i < NB_ELTS; i++){
-    int new = remove_elt(heap);
+    int new = test_remove_elt(heap);
     printf("%d\n", new);
     print_elt_array();
     check_is_a_heap();
