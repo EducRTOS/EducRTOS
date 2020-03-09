@@ -12,8 +12,8 @@
 #error "Not yet implemented"
 #endif
 
-#define FP_SCHEDULING 
-/* #define EDF_SCHEDULING */
+/* #define FP_SCHEDULING  */
+#define EDF_SCHEDULING
 
 #if defined(FP_SCHEDULING) && defined(EDF_SCHEDULING)
 #error "Cannot define two schedulers simultaneously"
