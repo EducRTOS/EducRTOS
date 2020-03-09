@@ -8,7 +8,9 @@
 
 
 //#define DEADLINE_MONITORING
-
+#if defined(DEADLINE_MONITORING)
+#error "Not yet implemented"
+#endif
 
 #define FP_SCHEDULING 
 /* #define EDF_SCHEDULING */
