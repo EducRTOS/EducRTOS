@@ -51,6 +51,10 @@ void
 hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
                 uint32_t start_address, uint32_t end_address);
 
+void
+hw_context_idle_init(struct hw_context* ctx);
+
+
 void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx);
 
