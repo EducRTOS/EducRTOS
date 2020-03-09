@@ -67,25 +67,6 @@ _start:\n\
 .size _start, . - _start\n\
 ");
 
-
-
-/* An endless infinite loop, used to catch errors, even in contexts
-   where there is no stack.
-   MAYBE: Tell why we enter this loop in an ecx argument.  */
-void __attribute__((noreturn))
-error_infinite_loop(void);
-
-asm("\
-.global error_infinite_loop\n\
-.type error_infinite_loop, @function\n\
-error_infinite_loop:\n\
-        /* Infinite loop. */\n\
-	cli\n\
-1:	hlt\n\
-	jmp 1b\n\
-");
-
-
 /**************** TSS ****************/
 
 /* The TSS; almost everything is unused when using software task switching. */
@@ -492,19 +473,6 @@ struct multiboot_information {
   uint32_t mods_count;
   struct module_information *mods_addr;
 }  __attribute__((packed));
-
-
-#include <stdarg.h>
-#include "lib/fprint.h"
-void __attribute__ ((format (printf, 1, 2)))
-fatal(char * format,...){
-  va_list ap;
-  va_start(ap, format);  
-  vfprint(terminal_putchar, format, ap);
-  va_end(ap);
-  error_infinite_loop();
-}
-
 
 void __attribute__((fastcall,used))
 low_level_init(uint32_t magic_value, struct multiboot_information *mbi) 

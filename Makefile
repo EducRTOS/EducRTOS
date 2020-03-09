@@ -16,7 +16,7 @@ CFLAGS += -g 			          # Debug annotations.
 
 #QEMU_GDB=-s -S
 
-KERNEL_FILES = low_level.c high_level.c terminal.c lib/fprint.c pit_timer.c scheduler.c per_cpu.c
+KERNEL_FILES = low_level.c error.c high_level.c terminal.c lib/fprint.c pit_timer.c scheduler.c per_cpu.c
 M32 ?= -m32
 
 all: system.exe system.objdump
