@@ -19,12 +19,16 @@
    significant (10s of second every day). */
 #define ACTUAL_TICK ((_1_SECOND * DIVISOR)/PIT_HZ) 
 
-/* DIVISOR must be held on 16 bits. */
-_Static_assert(DIVISOR < (1 << 16));
+/* DIVISOR must be held on 16 bits. This implies that wanted_tick must
+   be smaller than this (approximatively 50 milliseconds). */
+#define MAX_DIVISOR 65535
+_Static_assert(WANTED_TICK < (_1_SECOND * MAX_DIVISOR)/PIT_HZ);
+_Static_assert(DIVISOR < MAX_DIVISOR);
 
 
 #include <stdint.h>
 #include "low_level.h"
+#include "high_level.h"
 #include <stdatomic.h> 
 #include "x86/port.h"
 
