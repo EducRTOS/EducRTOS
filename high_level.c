@@ -3,9 +3,9 @@
 #include "user_tasks.h"
 #include "per_cpu.h"
 
-/* This works because hw_context must be the first field of a context. */
-_Static_assert(__builtin_offsetof(struct context,hw_context) == 0);
-
+/* Conversion from hw_context to context works because of this. */
+_Static_assert(__builtin_offsetof(struct context,hw_context) == 0,
+               "Hardware context must be the first field to allow type casts");
 
 /* Prepare the arguments for the call. This prologue will be the same
    for all functions that take 6 arguments. */
@@ -45,7 +45,8 @@ void * const syscall_array[SYSCALL_NUMBER] __attribute__((used)) = {
 
 void __attribute__((noreturn,used))
 high_level_timer_interrupt_handler(struct hw_context *cur_hw_ctx, date_t curtime){
-  _Static_assert(__builtin_offsetof(struct context,hw_context) == 0);
+  _Static_assert(__builtin_offsetof(struct context,hw_context) == 0,
+                 "Hardware context must be the first field to allow type casts");
   struct context *cur_ctx = (struct context *) cur_hw_ctx;
 
   while(1);
