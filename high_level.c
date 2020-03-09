@@ -31,7 +31,9 @@ c_syscall_yield(struct context *ctx,
   duration_t incr_wakeup = ((uint64_t) next_wakeup_high << 32) + (uint64_t) next_wakeup_low;
   duration_t incr_deadline = ((uint64_t) next_deadline_high << 32) + (uint64_t) next_deadline_low;
   ctx->sched_context.wakeup_date += incr_wakeup;
+#if defined(EDF_SCHEDULING) || defined (DEADLINE_MONITORING)
   ctx->sched_context.deadline = ctx->sched_context.wakeup_date + incr_deadline;
+#endif  
   sched_set_waiting(ctx);
   struct context *new_ctx  = sched_choose_next();
   hw_context_switch(&new_ctx->hw_context);
@@ -86,7 +88,9 @@ high_level_init(void){
   for(int i =0; i < NUM_CPUS; i++ ){
     struct context * ctx = &per_cpu[i].idle_ctx;
     ctx->sched_context.wakeup_date = 0ULL;
+#if defined(EDF_SCHEDULING) || defined(DEADLINE_MONITORING)
     ctx->sched_context.deadline = 0xFFFFFFFFFFFFFFFFULL;
+#endif    
     hw_context_idle_init(&ctx->hw_context);
   }
   scheduler_init();

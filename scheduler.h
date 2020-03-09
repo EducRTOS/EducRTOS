@@ -25,7 +25,9 @@ void scheduler_init(void);
 
 struct scheduling_context {
   date_t wakeup_date;           /* If active, last time it was awaken. If inactive: next time. */
+#if defined(EDF_SCHEDULING) || defined(DEADLINE_MONITORING)
   date_t deadline;
+#endif  
 #ifdef FP_SCHEDULING
   unsigned int priority;
 #endif  
