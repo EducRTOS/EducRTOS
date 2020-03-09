@@ -7,6 +7,7 @@
 #include "low_level.h"
 #include "high_level.h"
 #include "config.h"
+#include "error.h"
 
 /* As Qemu can dump the state before each basic block, the following
    fake jump is useful to debug assembly code.  */
@@ -159,10 +160,16 @@ static const segment_descriptor_t kernel_data_descriptor = create_data_descripto
 /* Because we use that in file-scope assembly, this must be a macro
    instead of an enum. */
 #define _KERNEL_DATA_SEGMENT_INDEX   2
-_Static_assert(_KERNEL_DATA_SEGMENT_INDEX == KERNEL_DATA_SEGMENT_INDEX);
+_Static_assert(_KERNEL_DATA_SEGMENT_INDEX == KERNEL_DATA_SEGMENT_INDEX,
+               "_KERNEL_DATA_SEGMENT_INDEX must be a separate macro "
+               "because it is used in inline assembly: "
+               "set it to KERNEL_DATA_SEGMENT_INDEX");
 
 #define _SYSCALL_NUMBER 2
-_Static_assert(_SYSCALL_NUMBER == SYSCALL_NUMBER);
+_Static_assert(_SYSCALL_NUMBER == SYSCALL_NUMBER,
+               "_SYSCALL_NUMBER must be a separate macro "
+               "because it is used in inline assembly: "
+               "set it to SYSCALL_NUMBER");
 
 /* Address of the gdt, and size in bytes. */
 static inline void lgdt(segment_descriptor_t *gdt, int size)
@@ -387,7 +394,7 @@ extern void _idle(void);
 
 void hw_context_idle_init(struct hw_context* ctx){
   /* terminal_print("Initializing idle %x\n", ctx); */
-  ctx->iframe.eip = &_idle;
+  ctx->iframe.eip = (uint32_t) &_idle;
 
   /* We reuse the kernel segment for idle tasks, by simplicity. Maybe
      we could put it to privilege number 3. */
