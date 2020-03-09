@@ -25,7 +25,15 @@ void __attribute__((regparm(3),noreturn,used))
 c_syscall_yield(struct context *ctx,
                 uint32_t next_wakeup_high, uint32_t next_wakeup_low,
                 uint32_t next_deadline_high, uint32_t next_deadline_low){
-  struct context *new_ctx  = sched_choose_from(ctx);
+  /* terminal_print("Syscall yield %x\n", ctx); */
+  /* terminal_print("%d|%x %x %x %x\n", next_wakeup_high, next_wakeup_low, */
+  /*        next_deadline_high, next_deadline_low); */
+  duration_t incr_wakeup = ((uint64_t) next_wakeup_high << 32) + (uint64_t) next_wakeup_low;
+  duration_t incr_deadline = ((uint64_t) next_deadline_high << 32) + (uint64_t) next_deadline_low;
+  ctx->sched_context.wakeup_date += incr_wakeup;
+  ctx->sched_context.deadline = ctx->sched_context.wakeup_date + incr_deadline;
+  sched_set_waiting(ctx);
+  struct context *new_ctx  = sched_choose_next();
   hw_context_switch(&new_ctx->hw_context);
 }
 
@@ -46,8 +54,16 @@ high_level_timer_interrupt_handler(struct hw_context *cur_hw_ctx, date_t curtime
   _Static_assert(__builtin_offsetof(struct context,hw_context) == 0,
                  "Hardware context must be the first field to allow type casts");
   struct context *cur_ctx = (struct context *) cur_hw_ctx;
-
-  while(1);
+  /* terminal_print("interrupt handler %x\n", cur_ctx); */
+  sched_wake_tasks(curtime);
+  struct context *new_ctx;
+  if(cur_ctx == &per_cpu[current_cpu()].idle_ctx) {
+    new_ctx = sched_choose_next();
+  }
+  else {
+    new_ctx = sched_maybe_preempt(cur_ctx);
+  }
+  hw_context_switch(&new_ctx->hw_context);
 }
 
 void context_init(struct context * const ctx, int idx,
@@ -74,6 +90,7 @@ high_level_init(void){
     hw_context_idle_init(&ctx->hw_context);
   }
   scheduler_init();
-  
-  hw_context_switch(&user_tasks_image.tasks[0].context->hw_context);
+
+  struct context *new_ctx = sched_choose_next();
+  hw_context_switch(&new_ctx->hw_context);  
 }
