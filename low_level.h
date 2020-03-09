@@ -32,7 +32,7 @@ struct pusha
 
 
 /* A segment descriptor is an entry in a GDT or LDT. */
-typedef uint64_t segment_descriptor_t;
+typedef uint64_t segment_descriptor_t __attribute__((aligned(8)));
 
 struct hw_context {
   /* The hardware context is restored with popa;iret. */
@@ -129,7 +129,7 @@ struct system_gdt {
 #ifndef FIXED_SIZE_GDT  
   struct user_task_descriptors user_task_descriptors[]; /* One per task */
 #endif  
-} __attribute__((packed));
+} __attribute__((packed,aligned(8)));
 
 struct low_level_description {
 #ifndef FIXED_SIZE_GDT  
