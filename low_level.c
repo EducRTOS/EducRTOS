@@ -546,7 +546,7 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
       tss_array[i].ss0 = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);
     }
 
-    lgdt(gdt,sizeof(struct system_gdt) + user_tasks_image.nb_tasks * sizeof(struct user_task_descriptors));
+    lgdt((segment_descriptor_t *) gdt,sizeof(struct system_gdt) + user_tasks_image.nb_tasks * sizeof(struct user_task_descriptors));
     /* terminal_writestring("After lgdt\n"); */
 
     load_code_segment(gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX));
