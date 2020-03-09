@@ -410,7 +410,7 @@ void hw_context_idle_init(struct hw_context* ctx){
   ctx->iframe.flags = (1 << 1) | (1 << 9);
 }
 
-void hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
+void hw_context_init(struct hw_context* ctx, uint32_t pc,
                      uint32_t start_address, uint32_t end_address){
   /* terminal_print("Init task %x\n", ctx); */
 #ifdef DEBUG

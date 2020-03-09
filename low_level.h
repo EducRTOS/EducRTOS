@@ -48,7 +48,7 @@ struct hw_context {
 
 
 void
-hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
+hw_context_init(struct hw_context* ctx, uint32_t pc,
                 uint32_t start_address, uint32_t end_address);
 
 void

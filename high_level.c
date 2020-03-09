@@ -55,7 +55,8 @@ high_level_timer_interrupt_handler(struct hw_context *cur_hw_ctx, date_t curtime
 void context_init(struct context * const ctx, int idx,
                   uint32_t pc,
                   uint32_t start, uint32_t end) {
-  hw_context_init(&ctx->hw_context, idx, pc, start, end);
+  (void) idx;
+  hw_context_init(&ctx->hw_context, pc, start, end);
 }
 
 void __attribute__((noreturn))
