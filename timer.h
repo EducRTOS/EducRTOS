@@ -21,5 +21,8 @@ date_t timer_current_time(void);
 /* Will call high_level_timer_interrupt_handler "soon after" we reach this date. */
 void timer_wake_at(date_t);
 
+/* Disarm the timer so that it will never wake. */
+void timer_dont_wake(void_t);
+
 
 #endif
