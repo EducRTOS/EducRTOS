@@ -10,9 +10,11 @@ QEMU_OPTIONS += -machine q35 # More recent hardware.
 LD_FLAGS= -nostdlib -ffreestanding
 CFLAGS = -ffreestanding -O2 -Wall -Wextra -std=gnu11 -fno-pic -foptimize-sibling-calls # -mregparm=3
 CFLAGS += -fno-asynchronous-unwind-tables # Disable generation of eh_frames.
+CFLAGS += -fno-stack-protector
 # CFLAGS += -msse2 # Better atomic operations, but does not work by default with Qemu.
 # CFLAGS += -fwhole-program		  # Aggressive link-time optimisation.
 CFLAGS += -g 			          # Debug annotations.
+
 
 #QEMU_GDB=-s -S
 
