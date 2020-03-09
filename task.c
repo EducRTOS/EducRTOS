@@ -29,32 +29,20 @@ asm("\
 .type user_error_infinite_loop, @function\n\
 user_error_infinite_loop:\n\
         /* Infinite loop. */\n\
-	cli\n\
 1:	hlt\n\
 	jmp 1b\n\
 ");
 
-/* static void puts(void (*putchar)(unsigned char), char *string){ */
-/*   while(*string) putchar(*string++); */
-/* } */
-
 void __attribute__((used))
 test_userspace(void)  {
-
-  yield(0x1122334455667788ULL,0xaabbccddeeff0011ULL);
-  
-  /* puts(putchar, "Hello from user task " XSTRING(TASK_NUMBER) "\n"); */
-  
   putchar('0' + TASK_NUMBER);
-
-  printf(" Hello from task%d\n", TASK_NUMBER);
-  
-  /* putchar('A' + TASK_NUMBER); */
-  
-  for(int i = 0; i < 3; i++){
-    /* putchar('0' + TASK_NUMBER);     */
+  printf(" says hello %d\n", TASK_NUMBER);
+  int i = 0;
+  while(1){
+    i++;
     printf("task" XSTRING(TASK_NUMBER) ": i=%d\n", i);
-    yield(1000000000ULL,2000000000ULL);
+    yield((TASK_NUMBER + 2)*1000000000ULL,1000000000ULL);
+    /* yield(3000000ULL,3000000ULL);     */
   }
   while(1);
 }
