@@ -71,15 +71,16 @@ hw_context_switch(struct hw_context* ctx);
 /* We try to pass the arguments in register using the regparm(3) GCC
    calling convention; except that we do not use the first argument
    eax, as it will be use in the kernel to pass the hardware context.
+   Also, we put the syscall number in ebx, and perform syscall number filtering
+   in assembly.
 
-   First argument (syscall number) is edx, second is ecx, third is
-   ebx, fourth is esi, fifth is edi, sixth is ebp. */
+   First argument (syscall number) is ebx, second is edx, third is ecx, fourth is esi, fifth is edi, sixth is ebp. */
 
 static inline void
 syscall1(uint32_t arg){
   asm volatile ("int %0": :
                 "i"(SOFTWARE_INTERRUPT_NUMBER),
-                "d"(arg)
+                "b"(arg)
                 );
 }
 
@@ -87,8 +88,8 @@ static inline void
 syscall2(uint32_t arg1, uint32_t arg2){
   asm volatile ("int %0": :
                 "i"(SOFTWARE_INTERRUPT_NUMBER),
-                "d"(arg1),
-                "c"(arg2)
+                "b"(arg1),
+                "d"(arg2)
                 );
 }
 
@@ -97,9 +98,9 @@ static inline void
 syscall5(uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5){
   asm volatile ("int %0": :
                 "i"(SOFTWARE_INTERRUPT_NUMBER),
-                "d"(arg1),
-                "c"(arg2),
-                "b"(arg3),
+                "b"(arg1),
+                "d"(arg2),
+                "c"(arg3),
                 "S"(arg4),
                 "D"(arg5)                
                 );

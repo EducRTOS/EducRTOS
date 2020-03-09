@@ -8,7 +8,7 @@ _Static_assert(__builtin_offsetof(struct context,hw_context) == 0,
                "Hardware context must be the first field to allow type casts");
 
 /* Prepare the arguments for the call. This prologue will be the same
-   for all functions that take 6 arguments. */
+   for all functions that take 5 arguments. */
 extern void syscall_yield(void);
 asm("\
 .global syscall_yield\n\t\
@@ -16,24 +16,22 @@ asm("\
 syscall_yield:\n\
         push %edi\n\
         push %esi\n\
-        push %ebx\n\
         call c_syscall_yield\n\
 .size syscall_yield, . - syscall_yield\n\
 ");
 
 
 void __attribute__((regparm(3),noreturn,used)) 
-c_syscall_yield(struct context *ctx, int syscall_number,
+c_syscall_yield(struct context *ctx,
                 uint32_t next_wakeup_high, uint32_t next_wakeup_low,
                 uint32_t next_deadline_high, uint32_t next_deadline_low){
-  terminal_print("%d|%x %x %x %x\n", syscall_number, next_wakeup_high, next_wakeup_low,
-         next_deadline_high, next_deadline_low);
   struct context *new_ctx  = sched_choose_from(ctx);
   hw_context_switch(&new_ctx->hw_context);
 }
 
 void __attribute__((regparm(3),noreturn,used)) 
-syscall_putchar(struct context *ctx, int syscall_number, int arg1) {
+syscall_putchar(struct context *ctx, int arg1) {
+  /* terminal_print("Syscall putchar %x\n", ctx); */
   terminal_putchar(arg1);
   hw_context_switch(&ctx->hw_context);
 }
