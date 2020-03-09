@@ -138,8 +138,11 @@ timer_interrupt_handler(struct hw_context *cur_hw_ctx){
        (date_t) cur, (date_t) next_wake_date);     */
   }
 
-  if(cur >= next_wake_date)
-    high_level_timer_interrupt_handler();
+  
+  if(cur >= next_wake_date){
+    timer_dont_wake();
+    high_level_timer_interrupt_handler(cur_hw_ctx, cur);
+  }
   
   hw_context_switch(cur_hw_ctx);
 }
