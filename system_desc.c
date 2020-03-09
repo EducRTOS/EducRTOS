@@ -39,14 +39,18 @@ static const struct task_description tasks[] = {
      .start_pc = 0,
      .task_begin = task0_begin,
      .task_end = task0_end,
-     .period = 3000000,     
+#ifdef FP_SCHEDULING     
+     .priority = 10,
+#endif     
   },
   [1] = {
      .context = &system_contexts[1],
      .start_pc = 0,
      .task_begin = task1_begin,
      .task_end = task1_end,
-     .period = 2000000,
+#ifdef FP_SCHEDULING     
+     .priority = 20,
+#endif          
   },
 };
 

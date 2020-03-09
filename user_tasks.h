@@ -34,7 +34,9 @@ struct task_description {
   uint32_t const start_pc;
   char* const task_begin;
   char* const task_end;
-  duration_t period;
+#ifdef FP_SCHEDULING     
+  unsigned int const priority;
+#endif   
 };
 
 /* High-level description of the application. */
