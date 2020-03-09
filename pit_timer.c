@@ -5,10 +5,19 @@
 #include "timer.h"
 #include "config.h"
 
-#define PIT_HZ 1193182             /* The PIT fixed frequency */
-#define WANTED_HZ 1000             /* A tick every ms. */
-#define DIVISOR (PIT_HZ/WANTED_HZ) /* By dividing by that, we have the wanted tick frequency. */
-#define TICK 1000ULL               /* The time, in nano seconds, between ticks. */
+#define _1_NANOSECOND 1ULL
+#define _1_MICROSECOND (1000 * _1_NANOSECOND)
+#define _1_MILLISECOND (1000 * _1_MICROSECOND)
+#define _1_SECOND (1000 * _1_MILLISECOND)
+
+#define PIT_HZ 1193182               /* The PIT fixed frequency */
+#define WANTED_TICK _1_MILLISECOND   /* The time, in nano seconds, between ticks. */
+/* How to divide to tick to the required frequency. */
+#define DIVISOR ((PIT_HZ * WANTED_TICK)/_1_SECOND)
+
+/* Using this allows to be precise; else the difference can be
+   significant (10s of second every day). */
+#define ACTUAL_TICK ((_1_SECOND * DIVISOR)/PIT_HZ) 
 
 /* DIVISOR must be held on 16 bits. */
 _Static_assert(DIVISOR < (1 << 16));
@@ -115,7 +124,7 @@ timer_interrupt_handler(struct hw_context *cur_hw_ctx){
   /* This instance is the only one changing the time. So we do not
      need to be atomic. */
   uint64_t cur = *(&current_time);
-  cur += TICK;
+  cur += ACTUAL_TICK;
   *(&current_time) = cur;
 
   /* Temporary: write a & every second, to show that it is working. */
