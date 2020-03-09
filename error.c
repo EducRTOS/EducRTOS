@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include  "error.h"
 
 #include <stdarg.h>
 #include "lib/fprint.h"
