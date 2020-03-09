@@ -131,9 +131,12 @@ timer_interrupt_handler(struct hw_context *cur_hw_ctx){
   cur += ACTUAL_TICK;
   *(&current_time) = cur;
 
-  /* Temporary: write a & every second, to show that it is working. */
-  if(count++ % 1000 == 0)
+  /* Temporary: write a & every 10th of second, to show time passing. */
+  if(++count % 100 == 0) {
     terminal_putchar('&');
+    /* terminal_print("cur: %llu, next_wake_date: %llu\n",
+       (date_t) cur, (date_t) next_wake_date);     */
+  }
 
   if(cur >= next_wake_date)
     high_level_timer_interrupt_handler();
