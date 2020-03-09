@@ -119,6 +119,7 @@ void timer_dont_wake(void){
   next_wake_date = DATE_FAR_AWAY;
 }
 
+#include "terminal.h"
 
 void __attribute__((regparm(3),noreturn,used))
 timer_interrupt_handler(struct hw_context *cur_hw_ctx){
