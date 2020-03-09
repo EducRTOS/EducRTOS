@@ -391,8 +391,40 @@ hw_context_switch(struct hw_context* ctx){
 }
 
 
+
+asm("\
+.global _idle\n\
+.type _idle, @function\n\
+_idle:\n\
+        sti\n\
+        hlt\n\
+        jmp _idle\n\
+.size _idle, . - _idle\n\
+");
+extern void _idle(void);
+
+
+void hw_context_idle_init(struct hw_context* ctx){
+  /* terminal_print("Initializing idle %x\n", ctx); */
+  ctx->iframe.eip = &_idle;
+
+  /* We reuse the kernel segment for idle tasks, by simplicity. Maybe
+     we could put it to privilege number 3. */
+  ctx->iframe.cs = gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX);
+  ctx->iframe.ss = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);  
+  
+#ifdef FIXED_SIZE_GDT
+  ctx->code_segment = kernel_code_descriptor;
+  ctx->data_segment = kernel_data_descriptor;
+#endif
+  /* Set only the reserved status flag, that should be set to 1; and
+     the interrupt enable flag. */
+  ctx->iframe.flags = (1 << 1) | (1 << 9);
+}
+
 void hw_context_init(struct hw_context* ctx, int idx, uint32_t pc,
                      uint32_t start_address, uint32_t end_address){
+  /* terminal_print("Init task %x\n", ctx); */
 #ifdef DEBUG
   ctx->regs.eax = 0xaaaaaaaa;
   ctx->regs.ecx = 0xcccccccc;

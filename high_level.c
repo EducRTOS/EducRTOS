@@ -67,6 +67,12 @@ high_level_init(void){
                  (uint32_t) task->task_begin, (uint32_t) task->task_end);
   }
 
+  for(int i =0; i < NUM_CPUS; i++ ){
+    struct context * ctx = &per_cpu[i].idle_ctx;
+    ctx->sched_context.wakeup_date = 0ULL;
+    ctx->sched_context.deadline = 0xFFFFFFFFFFFFFFFFULL;
+    hw_context_idle_init(&ctx->hw_context);
+  }
   scheduler_init();
   
   hw_context_switch(&user_tasks_image.tasks[0].context->hw_context);
