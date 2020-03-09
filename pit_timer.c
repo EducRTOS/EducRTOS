@@ -22,8 +22,10 @@
 /* DIVISOR must be held on 16 bits. This implies that wanted_tick must
    be smaller than this (approximatively 50 milliseconds). */
 #define MAX_DIVISOR 65535
-_Static_assert(WANTED_TICK < (_1_SECOND * MAX_DIVISOR)/PIT_HZ);
-_Static_assert(DIVISOR < MAX_DIVISOR);
+_Static_assert(WANTED_TICK < (_1_SECOND * MAX_DIVISOR)/PIT_HZ,
+               "WANTED_TICK must be small enough so that divisor fits in a tick");
+_Static_assert(DIVISOR < MAX_DIVISOR,
+               "DIVISOR must fit in a 16bit register");
 
 
 #include <stdint.h>
