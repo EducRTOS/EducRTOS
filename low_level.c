@@ -484,6 +484,9 @@ struct multiboot_information {
 void __attribute__((fastcall,used))
 low_level_init(uint32_t magic_value, struct multiboot_information *mbi) 
 {
+  /* Suppress the warning because we do not use mbi for now. */
+  (void) mbi;
+  
   /* Initialize terminal interface */
   terminal_initialize();
 
