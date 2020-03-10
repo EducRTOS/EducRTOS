@@ -28,7 +28,7 @@
 /**************** Boot ****************/
 
 #define MULTIBOOT_MAGIC 0x1BADB002
-#define MULTIBOOT_FLAGS ((1 << 0) | (1 << 1))
+#define MULTIBOOT_FLAGS ((1 << 0) | (1 << 1) | (1 << 2))
 #define MULTIBOOT_CHECKSUM -(MULTIBOOT_FLAGS + MULTIBOOT_MAGIC)
 
 struct multiboot {
@@ -37,10 +37,30 @@ struct multiboot {
   uint32_t checksum;
 } __attribute__((packed,aligned(4)));
 
-const struct multiboot multiboot __attribute__((section(".multiboot"))) = {
+struct extended_multiboot {
+  struct multiboot base;
+  uint32_t header_addr;
+  uint32_t load_addr;
+  uint32_t load_end_addr;
+  uint32_t bss_end_addr;
+  uint32_t entry_addr;
+  uint32_t mode_type;
+  uint32_t width;
+  uint32_t height;
+  uint32_t depth;
+};
+
+
+const struct extended_multiboot multiboot __attribute__((section(".multiboot"))) = {
+  .base = {
    .magic = MULTIBOOT_MAGIC,
    .flags = MULTIBOOT_FLAGS,
-   .checksum = MULTIBOOT_CHECKSUM,
+   .checksum = MULTIBOOT_CHECKSUM, },
+   /* Standard 80x25 text mode. */
+   .mode_type = 1,
+   .width = 80,
+   .height =  25,
+   .depth = 0
 };
 
 
