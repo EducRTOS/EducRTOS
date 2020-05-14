@@ -9,11 +9,25 @@
 /* These types should not be manipulated directly, but the high-level
    context has to know their size. */
 
-struct interrupt_frame
+/* https://wiki.osdev.org/VGA_Resources : code pour mode graphique. */
+
+
+/* This is pushed on the stack when there is an interrupt 
+   and the current privilege level is 0. */
+struct intra_privilege_interrupt_frame
 {
   uint32_t eip;
   uint32_t cs;
   uint32_t flags;
+} __attribute__((packed));
+
+/* This is pushed on the stack when there is an interrupt 
+   and the current privilege level is 3. */
+struct inter_privilege_interrupt_frame
+{
+  uint32_t eip;
+  uint32_t cs;
+  uint32_t flags;  
   uint32_t esp;
   uint32_t ss;
 } __attribute__((packed));
@@ -37,7 +51,7 @@ typedef uint64_t segment_descriptor_t __attribute__((aligned(8)));
 struct hw_context {
   /* The hardware context is restored with popa;iret. */
   struct pusha           regs;
-  struct interrupt_frame iframe;
+  struct inter_privilege_interrupt_frame iframe;
 #ifdef FIXED_SIZE_GDT  
   /* Segment selectors are initialized once. They point to the same
      address range, but code and segment are different. */

@@ -4,6 +4,7 @@ CC=gcc
 QEMU_OPTIONS= -d in_asm,int,cpu_reset,pcall,cpu -no-reboot -no-shutdown
 
 QEMU_OPTIONS += -machine q35 # More recent hardware.
+# QEMU_OPTIONS += -machine accel=kvm -cpu 'Nehalem' # Better CPU, but no logging anymore
 # Support for TSC Deadline. But no log anymore..
 #QEMU_OPTIONS += -cpu max -machine pc,kernel_irqchip=on,accel=kvm
 
@@ -18,7 +19,7 @@ CFLAGS += -g 			          # Debug annotations.
 
 #QEMU_GDB=-s -S
 
-KERNEL_FILES = low_level.c error.c high_level.c terminal.c lib/fprint.c pit_timer.c scheduler.c per_cpu.c
+KERNEL_FILES = low_level.c error.c high_level.c terminal.c lib/fprint.c pit_timer.c scheduler.c per_cpu.c vga.c
 M32 ?= -m32
 
 all: system.exe system.objdump

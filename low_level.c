@@ -373,6 +373,21 @@ struct system_gdt system_gdt;
 
 
 void __attribute__((noreturn))
+idle(struct hw_context* ctx){
+  /* int a; */
+  /* terminal_print("Idle: stack Address is %x\n", &ctx); */
+  /* tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct pusha) + sizeof(struct intra_privilege_interrupt_frame); */
+
+  asm volatile
+    ("mov %0,%%esp" : : "r"((uint32_t) ctx + sizeof(struct pusha) + sizeof(struct intra_privilege_interrupt_frame)) : "memory");
+  asm("sti");
+  asm("hlt");
+  asm("jmp error_infinite_loop");
+}
+
+#include "per_cpu.h"
+
+void __attribute__((noreturn))
 hw_context_switch(struct hw_context* ctx){
   /* terminal_print("Switching to %x\n", ctx); */
 
@@ -380,7 +395,9 @@ hw_context_switch(struct hw_context* ctx){
   /* terminal_print("Data segment is %llx\n", ctx->data_segment); */
   
   /* We will save the context in the context structure. */
-  tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct pusha) + sizeof(struct interrupt_frame);
+  tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct pusha) + sizeof(struct inter_privilege_interrupt_frame);
+
+  if(ctx == &per_cpu[current_cpu()].idle_ctx.hw_context){ idle(ctx); }
 
 #ifdef FIXED_SIZE_GDT
   system_gdt.user_code_descriptor = ctx->code_segment;
@@ -388,7 +405,7 @@ hw_context_switch(struct hw_context* ctx){
 #endif  
 
   
-  /* terminal_print("ds reg will be %x", ctx->iframe.ss); */
+  /* terminal_print("ds reg will be %x\n", ctx->iframe.ss); */
   load_ds_reg(ctx->iframe.ss);
   /* Load the context. */
   asm volatile
@@ -404,8 +421,8 @@ asm("\
 .global _idle\n\
 .type _idle, @function\n\
 _idle:\n\
-        sti\n\
-        hlt\n\
+/*        sti\n\
+        hlt*/\n\ 
         jmp _idle\n\
 .size _idle, . - _idle\n\
 ");
@@ -418,12 +435,19 @@ void hw_context_idle_init(struct hw_context* ctx){
 
   /* We reuse the kernel segment for idle tasks, by simplicity. Maybe
      we could put it to privilege number 3. */
-  ctx->iframe.cs = gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX);
-  ctx->iframe.ss = gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);  
+  ctx->iframe.cs = gdt_segment_selector(3,KERNEL_CODE_SEGMENT_INDEX);
+
+    /* gdt_segment_selector(0,KERNEL_CODE_SEGMENT_INDEX); */
+  /* ctx->iframe.ss = gdt_segment_selector(0, 0);/\* gdt_segment_selector(0,KERNEL_DATA_SEGMENT_INDEX);   *\/ */
+  ctx->iframe.ss = gdt_segment_selector(3, USER_DATA_SEGMENT_INDEX);
   
 #ifdef FIXED_SIZE_GDT
-  ctx->code_segment = kernel_code_descriptor;
-  ctx->data_segment = kernel_data_descriptor;
+  ctx->code_segment = create_code_descriptor(0,0xFFFFFFFF,3,0,1,0,1,S32BIT); /* kernel_code_descriptor; */
+  ctx->data_segment = create_data_descriptor(0,0xFFFFFFFF,3,0,1,0,1,S32BIT);
+
+    /* kernel_data_descriptor;   */
+  /* ctx->data_segment = null_descriptor; */
+    /* kernel_data_descriptor; */
 #endif
   /* Set only the reserved status flag, that should be set to 1; and
      the interrupt enable flag. */
@@ -559,9 +583,13 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
   /* Set-up the idt. */
   init_interrupts();
 
+  terminal_writestring("Before vga init\n");  
+  vga_init();
+  terminal_writestring("After vga init\n");
   //terminal_writestring("Switching to userpsace\n");
 
   timer_init();
   
   high_level_init();
+
 }

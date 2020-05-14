@@ -6,9 +6,9 @@
 #include "config.h"
 
 #define _1_NANOSECOND 1ULL
-#define _1_MICROSECOND (1000 * _1_NANOSECOND)
-#define _1_MILLISECOND (1000 * _1_MICROSECOND)
-#define _1_SECOND (1000 * _1_MILLISECOND)
+#define _1_MICROSECOND (1000ULL * _1_NANOSECOND)
+#define _1_MILLISECOND (1000ULL * _1_MICROSECOND)
+#define _1_SECOND (1000ULL * _1_MILLISECOND)
 
 #define PIT_HZ 1193182               /* The PIT fixed frequency */
 #define WANTED_TICK _1_MILLISECOND   /* The time, in nano seconds, between ticks. */
