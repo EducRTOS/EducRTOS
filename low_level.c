@@ -584,7 +584,7 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
   init_interrupts();
 
   terminal_writestring("Before vga init\n");  
-  vga_init();
+  /* vga_init(); */
   terminal_writestring("After vga init\n");
   //terminal_writestring("Switching to userpsace\n");
 
