@@ -423,7 +423,7 @@ asm("\
 .type _idle, @function\n\
 _idle:\n\
 /*        sti\n\
-        hlt*/\n\ 
+        hlt*/\n\
         jmp _idle\n\
 .size _idle, . - _idle\n\
 ");
