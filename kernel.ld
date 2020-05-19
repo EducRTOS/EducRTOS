@@ -31,8 +31,10 @@ SECTIONS
 	   Next we'll put the .text section. */
 	.all :
 	{
+          /* Multiboot section.  */
+       		EXCLUDE_FILE(system_desc.o) *(.multiboot)
           /* Code */
-		EXCLUDE_FILE(system_desc.o) *(.multiboot .text .text.*)
+		EXCLUDE_FILE(system_desc.o) *(.text .text.*)
   	  /* Read-only data. */
 		EXCLUDE_FILE(system_desc.o) *(.rodata .rodata.*)
           /* Read-write data (initialized) */
