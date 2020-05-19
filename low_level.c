@@ -383,6 +383,7 @@ idle(struct hw_context* ctx){
   asm("sti");
   asm("hlt");
   asm("jmp error_infinite_loop");
+  __builtin_unreachable ();
 }
 
 #include "per_cpu.h"
