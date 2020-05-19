@@ -30,6 +30,21 @@ qemu:   system.exe
 #	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel myos.exe -initrd task.bin 2>&1 | tee out | tail -n 500
 
 # Compiles everything together in a single system
+singlefile.c:	$(KERNEL_FILES)
+	cat $(KERNEL_FILES) > singlefile.c
+
+singlefile.i: 	$(KERNEL_FILES)
+	gcc -m32 -E singlefile.c > singlefile.i
+
+singlefile.exe: singlefile.i system_desc.o
+	$(CC) $(M32) $(LD_FLAGS) -Wl,-Tkernel.ld -o $@ $(CFLAGS) $^ -lgcc
+	if grub-file --is-x86-multiboot $@; then echo multiboot confirmed; else  echo the file is not multiboot; fi
+
+singlefile.qemu: singlefile.exe
+	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel singlefile.exe 2>&1 | tee out | tail -n 500
+
+
+
 system.exe: $(KERNEL_FILES) system_desc.o
 	$(CC) $(M32) $(LD_FLAGS) -Wl,-Tkernel.ld -o $@ $(CFLAGS) $(KERNEL_FILES) system_desc.o -lgcc
 	if grub-file --is-x86-multiboot $@; then echo multiboot confirmed; else  echo the file is not multiboot; fi
