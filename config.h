@@ -12,16 +12,20 @@
 #error "Not yet implemented"
 #endif
 
-/* #define FP_SCHEDULING  */
-#define EDF_SCHEDULING
+/* #define FP_SCHEDULING */
+/* #define EDF_SCHEDULING */
+/* #define ROUND_ROBIN_SCHEDULING */
+
+#if !defined(FP_SCHEDULING) && !defined(EDF_SCHEDULING) && !defined(ROUND_ROBIN_SCHEDULING)
+#error "Must define one scheduler"
+#endif
 
 #if defined(FP_SCHEDULING) && defined(EDF_SCHEDULING)
+||  defined(FP_SCHEDULING) && defined(ROUND_ROBIN_SCHEDULING)
+||  defined(EDF_SCHEDULING) && defined(ROUND_ROBIN_SCHEDULING)  
 #error "Cannot define two schedulers simultaneously"
 #endif
 
-#if !defined(FP_SCHEDULING) && !defined(EDF_SCHEDULING)
-#error "Must define one scheduler"
-#endif
 
 
 #endif

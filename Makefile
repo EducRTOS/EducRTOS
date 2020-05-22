@@ -16,8 +16,10 @@ CFLAGS += -fno-stack-protector
 # CFLAGS += -fwhole-program		  # Aggressive link-time optimisation.
 CFLAGS += -g 			          # Debug annotations.
 
-
 #QEMU_GDB=-s -S
+
+include config.mk
+CFLAGS += -D$(SCHEDULER)
 
 KERNEL_FILES = low_level.c error.c high_level.c terminal.c lib/fprint.c pit_timer.c scheduler.c per_cpu.c # vga.c
 M32 ?= -m32
