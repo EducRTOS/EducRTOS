@@ -99,5 +99,6 @@ high_level_init(void){
   scheduler_init();
 
   struct context *new_ctx = sched_choose_next();
+  /* terminal_print("Next is %x\n", new_ctx); */
   hw_context_switch(&new_ctx->hw_context);  
 }

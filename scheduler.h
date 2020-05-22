@@ -30,8 +30,10 @@ struct scheduling_context {
 #endif  
 #ifdef FP_SCHEDULING
   unsigned int priority;
+#endif
+#ifdef ROUND_ROBIN_SCHEDULING
+  struct context *next;
 #endif  
-  
 };
 
 #endif

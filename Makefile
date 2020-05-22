@@ -23,8 +23,9 @@ KERNEL_FILES := low_level.c error.c high_level.c terminal.c lib/fprint.c pit_tim
 include config.mk
 CFLAGS += -D$(SCHEDULER)
 
-
-ifneq ($(SCHEDULER),ROUND_ROBIN_SCHEDULING)
+ifeq ($(SCHEDULER),ROUND_ROBIN_SCHEDULING)
+	KERNEL_FILES:=$(KERNEL_FILES) round_robin_scheduler.c
+else
 	KERNEL_FILES:=$(KERNEL_FILES) priority_scheduler.c
 endif
 
