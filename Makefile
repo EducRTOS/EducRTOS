@@ -18,10 +18,19 @@ CFLAGS += -g 			          # Debug annotations.
 
 #QEMU_GDB=-s -S
 
+KERNEL_FILES := low_level.c error.c high_level.c terminal.c lib/fprint.c pit_timer.c per_cpu.c # vga.c
+
 include config.mk
 CFLAGS += -D$(SCHEDULER)
 
-KERNEL_FILES = low_level.c error.c high_level.c terminal.c lib/fprint.c pit_timer.c scheduler.c per_cpu.c # vga.c
+
+ifneq ($(SCHEDULER),ROUND_ROBIN_SCHEDULING)
+	KERNEL_FILES:=$(KERNEL_FILES) priority_scheduler.c
+endif
+
+
+
+
 M32 ?= -m32
 
 all: system.exe system.objdump
