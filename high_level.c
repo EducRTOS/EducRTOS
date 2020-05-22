@@ -29,10 +29,13 @@ c_syscall_yield(struct context *ctx,
   /* terminal_print("%d|%x %x %x %x\n", next_wakeup_high, next_wakeup_low, */
   /*        next_deadline_high, next_deadline_low); */
   duration_t incr_wakeup = ((uint64_t) next_wakeup_high << 32) + (uint64_t) next_wakeup_low;
-  duration_t incr_deadline = ((uint64_t) next_deadline_high << 32) + (uint64_t) next_deadline_low;
   ctx->sched_context.wakeup_date += incr_wakeup;
 #if defined(EDF_SCHEDULING) || defined (DEADLINE_MONITORING)
+  duration_t incr_deadline = ((uint64_t) next_deadline_high << 32) + (uint64_t) next_deadline_low;
   ctx->sched_context.deadline = ctx->sched_context.wakeup_date + incr_deadline;
+#else
+  /* Suppress warnings. */
+  (void) next_deadline_high; (void) next_deadline_low;
 #endif  
   sched_set_waiting(ctx);
   struct context *new_ctx  = sched_choose_next();
