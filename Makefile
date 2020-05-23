@@ -45,8 +45,8 @@ qemu:   system.exe
 singlefile.c:	$(KERNEL_FILES)
 	cat $(KERNEL_FILES) > singlefile.c
 
-singlefile.i: 	$(KERNEL_FILES)
-	gcc -m32 -E singlefile.c > singlefile.i
+singlefile.i: singlefile.c $(KERNEL_FILES)
+	gcc -m32 -E $(CFLAGS) singlefile.c > singlefile.i
 
 singlefile.exe: singlefile.i system_desc.o
 	$(CC) $(M32) $(LD_FLAGS) -Wl,-Tkernel.ld -o $@ $(CFLAGS) $^ -lgcc
@@ -80,7 +80,7 @@ task2.exe: task.c lib/fprint.c user_task.ld
 
 .PHONY: clean
 clean:
-	rm *.exe *.bin *.o
+	rm -f *.exe *.bin *.o singlefile.c
 
 # Note: xorriso and mtools should be installed for grub-mkrescure to work.
 # myos.iso:
