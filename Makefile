@@ -37,8 +37,8 @@ M32 ?= -m32
 all: system.exe system.objdump
 
 .PHONY: qemu
-qemu:   system.exe
-	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel system.exe 2>&1 | tee out | tail -n 500
+qemu:   system_10tasks.exe # system_100tasks.exe system_manual.exe
+	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel $< 2>&1 | tee out | tail -n 500
 #	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel myos.exe -initrd task.bin 2>&1 | tee out | tail -n 500
 
 # Compiles everything together in a single system
@@ -56,16 +56,25 @@ singlefile.qemu: singlefile.exe
 	qemu-system-i386 $(QEMU_OPTIONS) $(QEMU_GDB) -kernel singlefile.exe 2>&1 | tee out | tail -n 500
 
 
+system_desc_%tasks.o: task0.bin system_desc_%tasks.c
+	$(CC) -c $(M32) $(CFLAGS) -fno-common system_desc_$*tasks.c
 
-system.exe: $(KERNEL_FILES) system_desc.o
-	$(CC) $(M32) $(LD_FLAGS) -Wl,-Tkernel.ld -o $@ $(CFLAGS) $(KERNEL_FILES) system_desc.o -lgcc
+system_desc_%tasks.c: system_desc_gen
+	./system_desc_gen $* > $@
+
+system_desc_gen: system_desc_gen.ml
+	ocamlc system_desc_gen.ml -o system_desc_gen
+
+system%.exe: $(KERNEL_FILES) system_desc%.o # system_desc.o
+	sed -e s/system_desc/system_desc$*/g kernel.ld.tpl > kernel.ld
+	$(CC) $(M32) $(LD_FLAGS) -Wl,-Tkernel.ld -o $@ $(CFLAGS) $^ -lgcc
 	if grub-file --is-x86-multiboot $@; then echo multiboot confirmed; else  echo the file is not multiboot; fi
 
 system.objdump: system.exe
 	objdump -M intel -D system.exe > system.objdump
 
-system_desc.o: task0.bin task1.bin task2.bin system_desc.c
-	$(CC) -c $(M32) $(CFLAGS) -fno-common system_desc.c
+system_desc_manual.o: task0.bin task1.bin task2.bin system_desc_manual.c
+	$(CC) -c $(M32) $(CFLAGS) -fno-common system_desc_manual.c
 # Note: we use -fno-common to force allocation of initialized data at the right place.
 
 task0.exe: task.c lib/fprint.c user_task.ld

@@ -31,7 +31,7 @@ SECTIONS
 	   Next we'll put the .text section. */
 	.all :
 	{
-          /* Multiboot section.  */
+          /* Multiboot section.  */ 
        		EXCLUDE_FILE(system_desc.o) *(.multiboot)
           /* Code */
 		EXCLUDE_FILE(system_desc.o) *(.text .text.*)
