@@ -234,7 +234,7 @@ asm_syscall_handler:\n\
         mov %esp, %eax\n\
 	mov $(kernel_stack +" XSTRING(KERNEL_STACK_SIZE) "), %esp\n\
         cmp $" XSTRING(_SYSCALL_NUMBER) ", %ebx\n           \
-        ja error_infinite_loop\n\
+        jae error_infinite_loop\n\
         jmp *syscall_array(,%ebx,4)\n\
         jmp error_infinite_loop\n\
 .size asm_syscall_handler, . - asm_syscall_handler\n\
