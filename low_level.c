@@ -398,7 +398,9 @@ hw_context_switch(struct hw_context* ctx){
   /* We will save the context in the context structure. */
   tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct pusha) + sizeof(struct inter_privilege_interrupt_frame);
 
+#ifndef ROUND_ROBIN_SCHEDULING
   if(ctx == &per_cpu[current_cpu()].idle_ctx.hw_context){ idle(ctx); }
+#endif
 
 #ifdef FIXED_SIZE_GDT
   system_gdt.user_code_descriptor = ctx->code_segment;
