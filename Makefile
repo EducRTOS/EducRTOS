@@ -69,6 +69,7 @@ system%.exe: $(KERNEL_FILES) system_desc%.o # system_desc.o
 	sed -e s/system_desc/system_desc$*/g kernel.ld.tpl > kernel.ld
 	$(CC) $(M32) $(LD_FLAGS) -Wl,-Tkernel.ld -o $@ $(CFLAGS) $^ -lgcc
 	if grub-file --is-x86-multiboot $@; then echo multiboot confirmed; else  echo the file is not multiboot; fi
+	objdump -M intel -D $@ > system$*.objdump
 
 system.objdump: system.exe
 	objdump -M intel -D system.exe > system.objdump
