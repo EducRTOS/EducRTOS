@@ -407,9 +407,9 @@ hw_context_switch(struct hw_context* ctx){
   system_gdt.user_data_descriptor = ctx->data_segment;
 #elif defined(DYNAMIC_DESCRIPTORS)
   system_gdt.user_code_descriptor =
-    create_code_descriptor(ctx->start_address, ctx->end_address - ctx->start_address,3,0,1,0,1,S32BIT);
+    create_code_descriptor(ctx->start_address, ctx->memsize,3,0,1,0,1,S32BIT);
   system_gdt.user_data_descriptor =  
-    create_data_descriptor(ctx->start_address, ctx->end_address - ctx->start_address,3,0,1,0,1,S32BIT);
+    create_data_descriptor(ctx->start_address, ctx->memsize,3,0,1,0,1,S32BIT);
 #endif  
   
   /* terminal_print("ds reg will be %x\n", ctx->iframe.ss); */
@@ -455,6 +455,9 @@ void hw_context_idle_init(struct hw_context* ctx){
     /* kernel_data_descriptor;   */
   /* ctx->data_segment = null_descriptor; */
     /* kernel_data_descriptor; */
+#elif defined(DYNAMIC_DESCRIPTORS)
+  ctx->start_address = 0;
+  ctx->memsize = 0xFFFFFFFF;
 #endif
   /* Set only the reserved status flag, that should be set to 1; and
      the interrupt enable flag. */
@@ -501,7 +504,7 @@ void hw_context_init(struct hw_context* ctx, uint32_t pc,
     create_data_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
 #elif defined(DYNAMIC_DESCRIPTORS)
   ctx->start_address = start_address;
-  ctx->end_address = end_address;
+  ctx->memsize = end_address - start_address;
 #else
   struct system_gdt * const gdt = user_tasks_image.low_level.system_gdt;
   /* terminal_print("gdt is  %x\n", gdt);   */

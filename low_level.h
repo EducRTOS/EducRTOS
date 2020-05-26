@@ -54,7 +54,7 @@ struct hw_context {
   struct inter_privilege_interrupt_frame iframe;
 #ifdef DYNAMIC_DESCRIPTORS
   uint32_t start_address;
-  uint32_t end_address;
+  uint32_t memsize;
 #endif
 #ifdef FIXED_SIZE_GDT  
   /* Segment selectors are initialized once. They point to the same
