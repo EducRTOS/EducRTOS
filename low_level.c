@@ -367,7 +367,7 @@ void init_interrupts(void){
 
 /****************  ****************/
 
-#ifdef FIXED_SIZE_GDT
+#if defined(FIXED_SIZE_GDT) || defined(DYNAMIC_DESCRIPTORS)
 struct system_gdt system_gdt;
 #endif
 
@@ -404,7 +404,12 @@ hw_context_switch(struct hw_context* ctx){
 
 #ifdef FIXED_SIZE_GDT
   system_gdt.user_code_descriptor = ctx->code_segment;
-  system_gdt.user_data_descriptor = ctx->data_segment;  
+  system_gdt.user_data_descriptor = ctx->data_segment;
+#elif defined(DYNAMIC_DESCRIPTORS)
+  system_gdt.user_code_descriptor =
+    create_code_descriptor(ctx->start_address, ctx->end_address - ctx->start_address,3,0,1,0,1,S32BIT);
+  system_gdt.user_data_descriptor =  
+    create_data_descriptor(ctx->start_address, ctx->end_address - ctx->start_address,3,0,1,0,1,S32BIT);
 #endif  
   
   /* terminal_print("ds reg will be %x\n", ctx->iframe.ss); */
@@ -469,7 +474,7 @@ void hw_context_init(struct hw_context* ctx, uint32_t pc,
   ctx->regs.edi = 0x77777777;
 #endif
 
-#ifdef FIXED_SIZE_GDT
+#if defined(FIXED_SIZE_GDT) || defined(DYNAMIC_DESCRIPTORS)
 #define CODE_INDEX USER_CODE_SEGMENT_INDEX
 #define DATA_INDEX USER_DATA_SEGMENT_INDEX    
 #else
@@ -489,11 +494,14 @@ void hw_context_init(struct hw_context* ctx, uint32_t pc,
 
   /* terminal_print("Init ctx is %x; ", ctx); */
 
-#ifdef FIXED_SIZE_GDT
+#if defined(FIXED_SIZE_GDT)  /* || defined(DYNAMIC_DESCRIPTORS) */
   ctx->code_segment =
     create_code_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
   ctx->data_segment =
     create_data_descriptor(start_address, end_address - start_address,3,0,1,0,1,S32BIT);
+#elif defined(DYNAMIC_DESCRIPTORS)
+  ctx->start_address = start_address;
+  ctx->end_address = end_address;
 #else
   struct system_gdt * const gdt = user_tasks_image.low_level.system_gdt;
   /* terminal_print("gdt is  %x\n", gdt);   */
@@ -555,7 +563,7 @@ low_level_init(uint32_t magic_value, struct multiboot_information *mbi)
      and make sure that the segments use it. */
   {
     struct system_gdt *gdt =
-#ifdef FIXED_SIZE_GDT
+#if defined(FIXED_SIZE_GDT) || defined(DYNAMIC_DESCRIPTORS)
       &system_gdt;
 #else      
       user_tasks_image.low_level.system_gdt;

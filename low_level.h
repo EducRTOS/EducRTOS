@@ -52,6 +52,10 @@ struct hw_context {
   /* The hardware context is restored with popa;iret. */
   struct pusha           regs;
   struct inter_privilege_interrupt_frame iframe;
+#ifdef DYNAMIC_DESCRIPTORS
+  uint32_t start_address;
+  uint32_t end_address;
+#endif
 #ifdef FIXED_SIZE_GDT  
   /* Segment selectors are initialized once. They point to the same
      address range, but code and segment are different. */
@@ -135,18 +139,18 @@ struct system_gdt {
   segment_descriptor_t null_descriptor;
   segment_descriptor_t kernel_code_descriptor;
   segment_descriptor_t kernel_data_descriptor;
-#ifdef FIXED_SIZE_GDT
+#if defined(FIXED_SIZE_GDT) || defined(DYNAMIC_DESCRIPTORS)
   segment_descriptor_t user_code_descriptor;
   segment_descriptor_t user_data_descriptor;
 #endif  
   segment_descriptor_t tss_descriptor[NUM_CPUS];
-#ifndef FIXED_SIZE_GDT  
+#if !(defined(FIXED_SIZE_GDT) || defined(DYNAMIC_DESCRIPTORS))
   struct user_task_descriptors user_task_descriptors[]; /* One per task */
 #endif  
 } __attribute__((packed,aligned(8)));
 
 struct low_level_description {
-#ifndef FIXED_SIZE_GDT  
+#if !(defined(FIXED_SIZE_GDT) || defined(DYNAMIC_DESCRIPTORS))
   struct system_gdt * const system_gdt;
 #endif
 };
@@ -157,14 +161,14 @@ struct low_level_description {
   (offsetof(struct system_gdt,kernel_data_descriptor)/sizeof(segment_descriptor_t))
 #define TSS_SEGMENTS_FIRST_INDEX \
   (offsetof(struct system_gdt,tss_descriptor)/sizeof(segment_descriptor_t))
-#ifndef FIXED_SIZE_GDT
-#define START_USER_INDEX \
-  (offsetof(struct system_gdt,user_task_descriptors)/sizeof(segment_descriptor_t))
-#else
+#if defined(FIXED_SIZE_GDT) || defined(DYNAMIC_DESCRIPTORS)
 #define USER_CODE_SEGMENT_INDEX \
   (offsetof(struct system_gdt,user_code_descriptor)/sizeof(segment_descriptor_t))
 #define USER_DATA_SEGMENT_INDEX \
   (offsetof(struct system_gdt,user_data_descriptor)/sizeof(segment_descriptor_t))
+#else  
+#define START_USER_INDEX \
+  (offsetof(struct system_gdt,user_task_descriptors)/sizeof(segment_descriptor_t))
 #endif
 
 
@@ -172,7 +176,7 @@ struct low_level_description {
 /* #define START_USER_INDEX (sizeof(struct system_gdt)/sizeof(segment_descriptor_t)) */
 
 
-#ifdef FIXED_SIZE_GDT
+#if defined(FIXED_SIZE_GDT) || defined(DYNAMIC_DESCRIPTORS)
 #define SYSTEM_GDT(NB_TASKS) struct system_gdt system_gdt;
 #define SYSTEM_GDT_FIELD 
 #else
