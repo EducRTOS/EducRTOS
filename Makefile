@@ -90,7 +90,7 @@ task2.exe: task.c lib/fprint.c user_task.ld
 
 .PHONY: clean
 clean:
-	rm -f *.exe *.bin *.o singlefile.c
+	rm -f *.exe *.bin *.o singlefile.c system_desc_gen
 
 # Note: xorriso and mtools should be installed for grub-mkrescure to work.
 # myos.iso:
