@@ -1,3 +1,5 @@
+#include "user_tasks.h"
+
 /* What we do here is a kind of OCaml functor for C. It takes as argment
    (that must be defined earlier, possibly as static inline)
 
@@ -22,6 +24,7 @@ struct prefix ## _heap {                                                \
                                                                         \
                                                                         \
 void prefix ## _insert_elt(struct prefix ## _heap *heap, prefix ## _elt_id_t elt){ \
+  /* Temp */ assert(heap->size < user_tasks_image.nb_tasks);            \
   unsigned int i = heap->size++;                                        \
   prefix ## _priority_t priority = prefix ## _get_priority(elt);        \
   while(1){                                                             \
@@ -38,6 +41,7 @@ void prefix ## _insert_elt(struct prefix ## _heap *heap, prefix ## _elt_id_t elt
                                                                         \
 prefix ## _elt_id_t prefix ## _remove_elt(struct prefix ## _heap *heap) {\
   prefix ## _elt_id_t res = heap->array[0];                             \
+    /* Temp */ assert(heap->size <= user_tasks_image.nb_tasks);         \  
   heap->array[0] = heap->array[--heap->size];                           \
                                                                         \
   unsigned int i = 0;                                                   \
@@ -46,7 +50,7 @@ prefix ## _elt_id_t prefix ## _remove_elt(struct prefix ## _heap *heap) {\
   while(1){                                                             \
     unsigned int left = 2 * i + 1;                                      \
     unsigned int right = 2 * i + 2;                                     \
-                                                                        \
+    /* Temp */ assert(i < user_tasks_image.nb_tasks);                   \  
     unsigned int largest = i;                                           \
     prefix ## _priority_t largest_priority = i_priority;                \
     /* prefix ## _priority_t largest_priority = prefix ## _get_priority(heap->array[i]); */ \
