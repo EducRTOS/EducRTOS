@@ -46,6 +46,7 @@ extern const struct user_tasks_image {
   struct low_level_description const low_level;
   struct context ** const ready_heap_array;
   struct context ** const waiting_heap_array;  
+  struct context * const idle_ctx_array;
 } user_tasks_image;
 
 /* Provided by the application */

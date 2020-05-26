@@ -55,12 +55,15 @@ let doit n =
   ps "static struct context *ready_heap_array[NB_TASKS];                  \n";
   ps "static struct context *waiting_heap_array[NB_TASKS];                \n";
   ps "                                                                    \n";
+  ps "static struct context idle_ctx_array[NUM_CPUS];                     \n";
+  ps "                                                                    \n";
   ps "const struct user_tasks_image user_tasks_image = {                  \n";
   pf "  .nb_tasks = NB_TASKS,                                             \n";
   ps "  .tasks = tasks,                                                   \n";
   ps "  .low_level = {}/* low_level_description */,                       \n";
   ps "  .ready_heap_array = &ready_heap_array[0],                         \n";
   ps "  .waiting_heap_array = &waiting_heap_array[0],                     \n";
+  ps "  .idle_ctx_array = &idle_ctx_array[0],                             \n";
   ps "};                                                                  \n";
 ;;
 

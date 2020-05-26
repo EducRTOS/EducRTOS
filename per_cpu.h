@@ -5,7 +5,7 @@
 #include "high_level.h"
 
 struct per_cpu {
-  struct context idle_ctx;
+  /*struct context idle_ctx;*/
 };
 
 extern struct per_cpu per_cpu[NUM_CPUS];

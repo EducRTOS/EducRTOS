@@ -66,7 +66,7 @@ void scheduler_init(void){
   /* The idle tasks have a very low priority.  This is probably not
      necessary, as they are not put inside the heap. */
   for(int i =0; i < NUM_CPUS; i++ ){
-    struct context * ctx = &per_cpu[i].idle_ctx;
+    struct context * ctx = &user_tasks_image.idle_ctx_array[i];
     ctx->sched_context.priority = 0;
   }
 #endif    
@@ -97,7 +97,7 @@ void sched_wake_tasks(date_t curtime){
 }
 
 struct context * sched_maybe_preempt(struct context *ctx){
-  assert(ctx != &per_cpu[current_cpu()].idle_ctx);
+  assert(ctx != &user_tasks_image.idle_ctx_array[current_cpu()]);
   if(ready_heap.size > 0) {
     ready_priority_t curprio = ready_get_priority(ctx);
     ready_priority_t firstprio = ready_get_priority(ready_heap.array[0]);    
@@ -111,7 +111,7 @@ struct context * sched_maybe_preempt(struct context *ctx){
 
 struct context * sched_choose_next(void){
   if(ready_heap.size == 0) {
-    return &per_cpu[current_cpu()].idle_ctx;
+    return &user_tasks_image.idle_ctx_array[current_cpu()];
   }
   return ready_remove_elt(&ready_heap);
 }

@@ -62,7 +62,7 @@ high_level_timer_interrupt_handler(struct hw_context *cur_hw_ctx, date_t curtime
   /* terminal_print("interrupt handler %x\n", cur_ctx); */
   sched_wake_tasks(curtime);
   struct context *new_ctx;
-  if(cur_ctx == &per_cpu[current_cpu()].idle_ctx) {
+  if(cur_ctx == &user_tasks_image.idle_ctx_array[current_cpu()]) {
     new_ctx = sched_choose_next();
   }
   else {
@@ -89,7 +89,7 @@ high_level_init(void){
   }
 
   for(int i =0; i < NUM_CPUS; i++ ){
-    struct context * ctx = &per_cpu[i].idle_ctx;
+    struct context * ctx = &user_tasks_image.idle_ctx_array[i];
     ctx->sched_context.wakeup_date = 0ULL;
 #if defined(EDF_SCHEDULING) || defined(DEADLINE_MONITORING)
     ctx->sched_context.deadline = 0xFFFFFFFFFFFFFFFFULL;

@@ -399,14 +399,13 @@ hw_context_switch(struct hw_context* ctx){
   tss_array[current_cpu()].esp0 = (uint32_t) ctx + sizeof(struct pusha) + sizeof(struct inter_privilege_interrupt_frame);
 
 #ifndef ROUND_ROBIN_SCHEDULING
-  if(ctx == &per_cpu[current_cpu()].idle_ctx.hw_context){ idle(ctx); }
+  if(ctx == &user_tasks_image.idle_ctx_array[current_cpu()].hw_context){ idle(ctx); }
 #endif
 
 #ifdef FIXED_SIZE_GDT
   system_gdt.user_code_descriptor = ctx->code_segment;
   system_gdt.user_data_descriptor = ctx->data_segment;  
 #endif  
-
   
   /* terminal_print("ds reg will be %x\n", ctx->iframe.ss); */
   load_ds_reg(ctx->iframe.ss);
